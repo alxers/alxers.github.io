@@ -1,0 +1,78 @@
+<html>
+  <link rel="stylesheet" href="../../main.css">
+  <body>
+    <p class="page_top_border"></p>
+    <div id="header">
+      <a href="../../index.html" class="header_link">Notes</a>
+      <a href="../../projects.html" class="header_link">Projects</a>
+      <a href="../../math.html" class="header_link">Math</a>
+    </div>
+    <div id="content">
+      <div class="top_section">
+        <p class="subj"><span class="bold_text">Subject:</span> profiling game and renderer</p>
+      </div>
+      <p>
+        Key Goals: Profile the current performance of the renderer.
+      </p>
+      <p>
+        <h5>Measured Components :</h5>
+        <ul>
+          <li>The entire game loop (one frame);</li>
+          <li>Render Function: Reads sprites from a .bmp atlas and writes to the screen buffer (passed to the OS for display);</li>
+          <li>Inner Loop: The core pixel-processing logic within the render function.</li>
+        </ul>
+      </p>
+      <p>
+        <h4>Results:</h4>
+        <h5>First Frame :</h5>
+        <ul>
+          <li>ID 1 (The entire game loop, one frame): 300,253,484 cycles (1 hit, 1982 page faults);</li>
+          <li>ID 2 (Render Function): 17,176,904 cycles (7 hits, 34,336 bytes processed);</li>
+          <li>ID 3 (Inner Loop): 8,133,871 cycles (274,688 hits, 29 cycles/hit).</li>
+        </ul>
+        <h5>Nth Frame :</h5>
+        <ul>
+          <li>ID 1 (The entire game loop, one frame): 17,155,770 cycles (1 hit);</li>
+          <li>ID 2 (Render Function): 17,034,994 cycles (7 hits, 34,336 bytes processed);</li>
+          <li>ID 3 (Inner Loop): 8,477,079 cycles (274,688 hits, 30 cycles/hit).</li>
+        </ul>
+      </p>
+      <p>
+        There is a significant disparity between the first frame and subsequent frames in the game loop: the initial frame required 300,253,484 cycles , while later frames (Nth frames) consumed only 17,155,770 cycles . We will explore the reason for that later. Notably, the render function (ID 2) accounts for the majority of CPU usage, consuming approximately 17 million cycles per frame.
+      </p>
+      
+      <p>
+        <h4>Sprite Memory Breakdown (First Frame):</h4>
+        A typical frame renders multiple sprites. A sprite is an image composed of pixels, where each pixel is a 32-bit value . This includes 24 bits for color (8 bits each for red, green, and blue) and 8 bits for the alpha channel (transparency).
+        <ul>
+          <li>Background: (512 * 512 pixels * 4 bytes/pixel) / 8 = 32,768 bytes;</li>
+          <li>Main Character: (64 * 32) / 8 = 256 bytes;</li>
+          <li>Main Button: (64 * 64) / 8 = 512 bytes;</li>
+          <li>Blank Position Button: (64 * 64) / 8 = 512 bytes;</li>
+          <li>Position Icon: (32 * 32) / 8 = 128 bytes;</li>
+          <li>Arrow Icon: (16 * 16) / 8 = 32 bytes;</li>
+          <li>Total: 34,336 bytes per frame.</li>
+        </ul>
+        <h5>Memory Throughput Analysis:</h5>
+        At 30 FPS, the renderer processes 1,030,080 bytes/sec (~0.00096 GB/s) . This is orders of magnitude lower than modern memory bandwidth, indicating the bottleneck is computational, not memory-bound. However, before making any conclusions, let's run tests to validate system-level performance.
+      </p>
+      <p>
+      <ul>
+          <li><a href="../n3/pa_bench_1.html">Overview</a></li>
+          <li>Profiling the game code;</li>
+          <li><a href="../n3/pa_bench_3.html">File I/O and page faults;</a></li>
+          <li><a href="../n3/pa_bench_4.html">Measuring memory bandwidth;</a></li>
+          <li><a href="../n3/pa_bench_5.html">Instruction decoding;</a></li>
+          <li><a href="../n3/pa_bench_6.html">Testing branch prediction;</a></li>
+          <li><a href="../n3/pa_bench_7.html">Studying execution ports and schedulers;</a></li>
+          <li><a href="../n3/pa_bench_8.html">Assessing cache sizes and bandwidth;</a></li>
+          <br>
+            <i>In progress</i>
+          <br>
+          <li>Reviewing code from a performance perspective;</li>
+          <li>Introducing SIMD;</li>
+          <li>Multithreading.</li>
+        </ul>
+      </p>
+  </body>
+</html>

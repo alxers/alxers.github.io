@@ -1,0 +1,73 @@
+<html>
+  <link rel="stylesheet" href="main.css">
+  <body>
+    <p class="page_top_border"></p>
+    <div id="header">
+      <a href="index.html" class="header_link">Notes</a>
+      <span class="header_link">Projects</span>
+      <a href="math.html" class="header_link">Math</a>
+    </div>
+    <h1 class="title">Projects: </h1>
+    <div id="content">
+      <div class="project">
+        <h3>Profiler</h3>
+        <p>
+          A lightweight profiler leveraging the x86 RDTSC (Read Time-Stamp Counter) instruction to measure code block execution times with cycle-accurate precision.
+        </p>
+        <p>
+          High-resolution timing captures performance metrics for arbitrary code segments, enabling granular analysis of bottlenecks. A simple API marks code regions (e.g., PROFILE_START, PROFILE_END) and report timing results in human-readable formats (cycles, nanoseconds).
+        </p>
+      </div>
+  
+      <div class="project">
+        <h3>8086 CPU simulator</h3>
+        <p>
+          Developed a partial 8086 CPU emulator as part of the computer enhance course (https://www.computerenhance.com/), capable of executing common x86 instructions (e.g., MOV, ADD, SUB, DIV, MUL, JMP, CMP, etc.). It's capable of executing most of this assemler files https://github.com/cmuratori/computer_enhance/tree/main/perfaware/part1.
+        </p>
+      </div>
+  
+      <div class="project">
+        <h3>Logic puzzle game</h3>
+        <p>
+          Designing and developing an educational puzzle game grounded in formal logic principles. The game teaches first-order logic and natural deduction through interactive, rule-based challenges (in progress).
+        </p>
+      </div>
+      
+      <div class="project">
+        <h3>Memory training game</h3>
+        <p>Link: <a href="https://aershov.itch.io/memory-tower">https://aershov.itch.io/memory-tower</a></p>
+        <p><img src="content/proj/mem_tower.png" class="project_img_50"></p>
+         Developed a Dual-N-Back-like (cognitive training mechanics) game from scratch in C, without reliance on external libraries or engines.
+        <ul>
+          <li>Software renderer for real-time visualization of game sequences, paired with a custom BMP file loader/parser for asset management and a WAV (RIFF) audio loader/parser for sound integration;</li>
+          <li>A lightweight animation system and a Windows API layer to handle user input, window management, and rendering synchronization.</li>
+        </ul>
+      </div>
+  
+      <div class="project">
+        <h3>Simple ray tracer</h3>
+        Developed a CPU-based ray tracer from scratch in C to render 3D scenes with camera movement, geometric primitives (spheres, planes), and multiple surface materials (diffuse, reflective, refractive). Implemented ray-object intersection algorithms, perspective camera controls, and physically based lighting models for realistic shadows and reflections.
+        <p><img src="content/proj/ray_tr1.png" class="project_img_50"></p>
+        <p><img src="content/proj/ray_tr2.png" class="project_img_50"></p>
+        <p><img src="content/proj/ray_tr3.png" class="project_img_50"></p>
+      </div>
+  
+      <div class="project">
+        <h3>Game AI Agent Simulation with Steering Behaviors</h3>
+        <p>
+          Designed and implemented an AI system simulating autonomous agents (vehicles) with dynamic behaviors: seek, pursuit, flee, evade, wall/obstacle avoidance, and wander.
+        </p>
+        <p>
+          <ul>
+            <li>Car agent that actively seeks/pursues nearby vehicles within range, dynamically switching to evasion tactics when targeted by pursuers;</li>
+            <li>Steering behaviors (e.g., velocity matching, collision avoidance) for smooth navigation in environments with moving obstacles and boundaries;</li>
+            <li>Adaptive AI where "prey" agents transition from wandering to evasive maneuvers based on threat detection.</li>
+          </ul>
+        </p>
+        <p>
+          Interactive demo: <a href="content/proj/game_ai_demo/index.html" target="_blank">run demo</a>
+        </p>
+      </div>
+    </div>
+  </body>
+</html>

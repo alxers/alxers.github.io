@@ -1,0 +1,88 @@
+  html {
+    font-size: 24px;
+  }
+
+body {
+    margin-left: auto;
+    margin-right: auto;
+    margin-top: 0;
+    margin-bottom: 0;
+    width: 100%;
+    max-width: 1000px;
+    min-height: 100%;
+    position: relative;
+    line-height: 1.4;
+    font-size: 0.96rem;
+    color: rgb(54, 55, 55);
+}
+
+code {
+  font-size: 0.55rem;
+}
+
+.page_top_border {
+  border-top: solid black 0.25rem;
+}
+
+h1.title {
+  margin-left: 5rem;
+  font-size: 1.8em;
+}
+
+div#content {
+  padding: 1.5rem 0 3rem 0;
+  margin-left: 5rem;
+  margin-right: 5rem;
+}
+
+div#header {
+  text-align: right;
+  margin-right: 5rem;
+}
+
+.header_link {
+  padding-right: 0.8rem;
+}
+
+div {
+  display: block;
+  unicode-bidi: isolate;
+}
+
+div.top_section {
+  padding-top: 1.5rem;
+  padding-left: 2.5rem;
+  text-indent: -2.5rem;
+}
+
+.top_section p.subj {
+  margin-bottom: 0.5em;
+}
+
+.top_section p {
+  font-size: 140%;
+  line-height: 1.25;
+  width: 80%;
+}
+
+a {
+  color: inherit;
+}
+
+.top_section .top_summary {
+  font-size: 110%;
+}
+
+.bold_text {
+  font-weight: bold;
+}
+
+.project {
+  margin-bottom: 50px;
+}
+
+.project_img_50 {
+    width: 50%;
+    height: auto;
+    display: block;
+}

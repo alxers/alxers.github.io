@@ -1,0 +1,49 @@
+<html>
+  <link rel="stylesheet" href="../../main.css">
+  <body>
+    <p class="page_top_border"></p>
+    <div id="header">
+      <a href="../../index.html" class="header_link">Notes</a>
+      <a href="../../projects.html" class="header_link">Projects</a>
+      <a href="../../math.html" class="header_link">Math</a>
+    </div>
+    <div id="content">
+      <div class="top_section">
+        <p class="subj"><span class="bold_text">Subject:</span> what is an actual pointer in x64 systems</p>
+        <p class="top_summary"><span class="bold_text">Short summary:</span> it's a packed structure consisting of six parts. The high 16 bits are not used, the low 12 is an actual offset in physical memory. The 36 bits in between divided into four part of 9 bits each.</p>
+        <p class="top_summary"><span class="bold_text">Source:</span> <a href="computerenhance.com">computerenhance.com</a>, intel architectural manual</p>
+      </div>
+      <p>
+        In modern systems, memory is virtual. This means that the memory address you see in a debugger (e.g., when debugging a program) is not the actual physical memory address in RAM. Instead, it is a virtual address managed by the operating system in units called <b>pages</b>. The typical page size is 4 kilobytes (KB). So, even if your program tries to allocate just 1 byte of memory, it will implicitly be given an entire 4 KB page.
+      </p>
+      <p>
+        It's often said that a pointer represents "some memory address," but what exactly does this mean?
+      </p>
+      <p>
+        In a 64-bit system, a virtual memory address is divided into several parts. The low 12 bits (rightmost) represent an offset within a physical memory page. The high 16 bits (leftmost) are unused in current implementations. The remaining 36 bits are divided into four parts, each 9 bits long. But how does this structure enable memory addressing?
+      </p>
+      <p>
+        When the CPU needs to translate a virtual address into a physical address, it performs a series of table lookups as follows:
+      </p>
+      <img src="four_level_paging2.png">
+      <p>
+        1. <b>Top-Level Table (PML4):</b><br>
+        The address of the top-level table is stored in a special CPU register called CR3. All tables in this process are 4 KB in size, and each table contains 512 entries (since 4096 bytes / 8 bytes per entry = 512 entries). The first 9 bits of the virtual address are used as an index into this top-level table. The selected entry points to the address of a second-level table. </p>
+      <p>
+        2. <b>Second-Level Table (PDP):</b><br>
+        The next 9 bits of the virtual address are used to index into the second-level table. The entry found here points to the address of a third-level table. </p>
+      <p>
+        3. <b>Third-Level Table (PD):</b><br>
+        The next 9 bits are used to index into the third-level table. The entry found here points to the address of a fourth-level table. </p>
+      <p>
+        4. <b>Fourth-Level Table (PT):</b><br>
+        The final 9 bits are used to index into the fourth-level table. The entry found here contains the address of a physical 4 KB memory page in RAM. </p>
+      <p>
+        The low 12 bit of a pointer is an offset in this physical memory page. The 12 bits is exactly how much it takes to encode a number between 0 and 4095. So finally we can address a particular byte in memory.
+      </p>
+  </body>
+</html>
+
+
+
+

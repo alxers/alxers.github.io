@@ -1,0 +1,170 @@
+<html>
+  <link rel="stylesheet" href="../../main.css">
+  <body>
+    <p class="page_top_border"></p>
+    <div id="header">
+      <a href="../../index.html" class="header_link">Notes</a>
+      <a href="../../projects.html" class="header_link">Projects</a>
+      <a href="../../math.html" class="header_link">Math</a>
+    </div>
+    <div id="content">
+      <div class="top_section">
+        <p class="subj"><span class="bold_text">Subject:</span> instruction decoding</p>
+      </div>
+      <p>
+        Modern CPUs attempt to execute instructions in parallel whenever possible. However, their frontend - the component responsible for fetching and decoding instructions - has inherent limits. Even if the backend (execution units) is highly parallelized, performance will bottleneck if the frontend cannot supply instructions fast enough. For example, if the frontend decodes only one instruction per clock cycle, the CPU cannot exceed that rate.
+      </p>
+      <p>
+        To measure frontend throughput on this hardware, we reused the earlier loop structure but replaced the mov instruction with NOP (no-operation) instructions. We tested two variants:<br>
+        <br>
+        A 3-byte NOP (equivalent in size to the original mov).<br>
+        Multiple 1-byte NOPs per iteration to stress-test frontend decoding limits.<br>
+        <br>
+        <pre>
+        <code>
+asm_nop_3_byte_loop:
+  xor rax, rax
+  .loop:
+    db 0x0f, 0x1f, 0x00
+    inc rax
+    cmp rax, rcx
+    jb .loop
+    ret
+
+asm_nop_1_byte_3_times_loop:
+  xor rax, rax
+  .loop:
+    nop
+    nop
+    nop
+    inc rax
+    cmp rax, rcx
+    jb .loop
+    ret
+
+asm_nop_1_byte_1_times_loop:
+  xor rax, rax
+  .loop:
+    nop
+    inc rax
+    cmp rax, rcx
+    jb .loop
+    ret
+
+asm_nop_1_byte_2_times_loop:
+  xor rax, rax
+  .loop:
+    nop
+    nop
+    inc rax
+    cmp rax, rcx
+    jb .loop
+    ret
+
+asm_nop_1_byte_10_times_loop:
+  xor rax, rax
+  .loop:
+    nop
+    nop
+    nop
+    nop
+    nop
+    nop
+    nop
+    nop
+    nop
+    nop
+    inc rax
+    cmp rax, rcx
+    jb .loop
+    ret
+
+asm_nop_1_byte_5_times_loop:
+  xor rax, rax
+  .loop:
+    nop
+    nop
+    nop
+    nop
+    nop
+    inc rax
+    cmp rax, rcx
+    jb .loop
+    ret
+
+
+asm_nop_1_byte_7_times_loop:
+  xor rax, rax
+  .loop:
+    nop
+    nop
+    nop
+    nop
+    nop
+    nop
+    nop
+    inc rax
+    cmp rax, rcx
+    jb .loop
+    ret
+        </code>
+        </pre>
+        <br>
+        Results:<br>
+        <br>
+        3-byte NOP loop:<br>
+        Total time: 386.4239 ms<br>
+        Min/Max: 2.645 GB/s and 2.488 GB/s (0 page faults).<br>
+        <br>
+        Three 1-byte NOPs per loop:<br>
+        Total time: 517.9729 ms<br>
+        Min/Max: 1.980 GB/s and 1.835 GB/s (0 page faults).<br>
+        <br>
+        Ten 1-byte NOPs per loop:<br>
+        Total time: 1,155.5886 ms<br>
+        Min/Max: 0.878 GB/s and 0.535 GB/s (0 page faults).<br>
+        <br>
+        Five 1-byte NOPs per loop:<br>
+        Total time: 677.1334 ms<br>
+        Min/Max: 1.504 GB/s and 1.408 GB/s (0 page faults).<br>
+        <br>
+        Seven 1-byte NOPs per loop:<br>
+        Total time: 896.1636 ms<br>
+        Min/Max: 1.127 GB/s and 1.097 GB/s (0 page faults).<br>
+        <br>
+        Additional Tests:<br>
+        Single 1-byte NOP per loop:<br>
+        Total time: 384.4103 ms and 393.9344 ms (variance in runs).<br>
+        Min/Max: 2.645 GB/s to 2.335 GB/s (0 page faults).<br>
+      </p>
+      <p>
+        These results demonstrate that increasing the number of instructions - even non-computational NOPs - reduces throughput as the frontend becomes saturated. Notably, a 3-byte NOP outperforms three 1-byte NOPs, suggesting the frontend decodes larger instructions more efficiently.
+      </p>
+      <p>
+        According to Agner Fog's <i>Microarchitecture Manual</i>, the Broadwell CPU's frontend is designed for 4 instructions per clock cycle and can fetch 16 bytes of code per cycle in single-threaded workloads. Our tests align with this: the gradual slowdown as instruction count increases implies a frontend bottleneck, with decoding throughput approaching ~4 instructions/cycle in the tested loop.
+      </p>
+      
+      <p>
+
+        
+                <ul>
+          <li><a href="../n3/pa_bench_1.html">Overview</a></li>
+          <li><a href="../n3/pa_bench_2.html">Profiling the game code;</a></li>
+          <li><a href="../n3/pa_bench_3.html">File I/O and page faults;</a></li>
+          <li><a href="../n3/pa_bench_4.html">Measuring memory bandwidth;</a></li>
+          <li>Instruction decoding;</li>
+          <li><a href="../n3/pa_bench_6.html">Testing branch prediction;</a></li>
+          <li><a href="../n3/pa_bench_7.html">Studying execution ports and schedulers;</a></li>
+          <li><a href="../n3/pa_bench_8.html">Assessing cache sizes and bandwidth;</a></li>
+          <br>
+            <i>In progress</i>
+          <br>
+          <li>Reviewing code from a performance perspective;</li>
+          <li>Introducing SIMD;</li>
+          <li>Multithreading.</li>
+        </ul>
+        
+        
+      </p>
+  </body>
+</html>

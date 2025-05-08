@@ -1,0 +1,127 @@
+<html>
+  <link rel="stylesheet" href="../../main.css">
+  <body>
+    <p class="page_top_border"></p>
+    <div id="header">
+      <a href="../../index.html" class="header_link">Notes</a>
+      <a href="../../projects.html" class="header_link">Projects</a>
+      <a href="../../math.html" class="header_link">Math</a>
+    </div>
+    <div id="content">
+      <div class="top_section">
+        <p class="subj"><span class="bold_text">Subject:</span> execution ports and scheduler</p>
+      </div>
+      <p>
+        After the frontend decodes instructions, they are sent to the backend scheduler, which determines execution order and timing. The scheduler tracks dependencies and ensures resources (e.g., execution ports) are available.
+      </p>
+      <p>
+        Ultimately, performance bottlenecks depend on the number of execution ports for specific operations. For example, if a CPU has two ALUs and code requires three additions, one operation must stall. To test port availability for mov (loads/stores), we designed microbenchmarks that avoid memory bandwidth interference by reusing the same memory address.
+        <pre>
+          <code>
+asm_ports_read_mov_1x:
+  align 64
+  .loop:
+    mov rax, [rdx]
+    sub rcx, 1
+    jnle .loop
+    ret
+
+asm_ports_read_mov_2x:
+  align 64
+  .loop:
+    mov rax, [rdx]
+    mov rax, [rdx]
+    sub rcx, 2
+    jnle .loop
+    ret
+
+asm_ports_read_mov_3x:
+  align 64
+  .loop:
+    mov rax, [rdx]
+    mov rax, [rdx]
+    mov rax, [rdx]
+    sub rcx, 3
+    jnle .loop
+    ret
+          </code>
+        </pre>
+        <br>
+        The stores are the same, exctep we change to mov [memory], register:<br>
+        <pre>
+        <code>
+asm_ports_write_mov_1x:
+  align 64
+  xor rax, rax
+  .loop:
+    mov [rdx], rax
+    sub rcx, 1
+    jnle .loop
+    ret
+
+asm_ports_write_mov_2x:
+  align 64
+  xor rax, rax
+  .loop:
+    mov [rdx], rax
+    mov [rdx], rax
+    sub rcx, 2
+    jnle .loop
+    ret
+
+asm_ports_write_mov_3x:
+  align 64
+  xor rax, rax
+  .loop:
+    mov [rdx], rax
+    mov [rdx], rax
+    mov [rdx], rax
+    sub rcx, 3
+    jnle .loop
+    ret
+          </code>
+        </pre>
+      </p>
+      <p>
+        Results:<br>
+        <br>
+        Loads:<br>
+        <br>
+        1x: 379.9099 ms (2.646 GB/s).<br>
+        2x: 189.9677 ms (5.314 GB/s).<br>
+        3x: 192.7740 ms (5.307 GB/s).<br>
+        <br>
+        Stores:<br>
+        <br>
+        1x: 387.4054 ms (2.651 GB/s).<br>
+        2x: 389.9868 ms (2.640 GB/s).<br>
+        3x: 382.9486 ms (2.638 GB/s).<br>
+      </p>
+      <p>
+        Loads scale efficiently up to 2x (doubling throughput), but 3x shows diminishing returns. Stores plateau at 1x throughput, suggesting only one store port is available. This aligns with Intel’s documentation for Broadwell CPUs, which specifies two load ports and one store port (see Intel 64 and IA-32 Architectures Optimization Reference Manual , Section 2.3.4).
+      </p>
+      
+      <p>
+
+        
+                <ul>
+          <li><a href="../n3/pa_bench_1.html">Overview</a></li>
+          <li><a href="../n3/pa_bench_2.html">Profiling the game code;</a></li>
+          <li><a href="../n3/pa_bench_3.html">File I/O and page faults;</a></li>
+          <li><a href="../n3/pa_bench_4.html">Measuring memory bandwidth;</a></li>
+          <li><a href="../n3/pa_bench_5.html">Instruction decoding;</a></li>
+          <li><a href="../n3/pa_bench_6.html">Testing branch prediction;</a></li>
+          <li>Studying execution ports and schedulers;</li>
+          <li><a href="../n3/pa_bench_8.html">Assessing cache sizes and bandwidth;</a></li>
+          <br>
+            <i>In progress</i>
+          <br>
+          <li>Reviewing code from a performance perspective;</li>
+          <li>Introducing SIMD;</li>
+          <li>Multithreading.</li>
+        </ul>
+        
+        
+      </p>
+  </body>
+</html>

@@ -1,0 +1,115 @@
+<html>
+  <link rel="stylesheet" href="../../main.css">
+  <body>
+    <p class="page_top_border"></p>
+    <div id="header">
+      <a href="../../index.html" class="header_link">Notes</a>
+      <a href="../../projects.html" class="header_link">Projects</a>
+      <a href="../../math.html" class="header_link">Math</a>
+    </div>
+    <div id="content">
+      <div class="top_section">
+        <p class="subj"><span class="bold_text">Subject:</span> memory write bandwidth</p>
+      </div>
+      <p>
+        In addition to reading files, the engine must write to memory (specifically, to a buffer passed to the OS for display). To test write performance, we measured memory bandwidth using a method similar to the file I/O benchmarks. Instead of reading a file, we allocated 1 GB of memory and wrote to it one byte at a time. The code:
+        <pre>
+        <code>
+          for (u64 index = 0; index < allocated_size; index++) {  
+            source[index] = (u8)index;  
+          }
+        </code>
+        </pre>
+        <p>
+          Results:<br>
+          <br>
+          Total time: 436.9061 ms<br>
+          Min: 1,024 MB at 2.356 GB/s (0 page faults)<br>
+          Max: 1,024 MB at 1.555 GB/s (262,655 page faults)<br>
+          <br>
+          The fastest observed write speed was ~2.35 GB/s . The compiled assembly loop (with -O2 optimization) is:<br>
+          <br>
+          <pre>
+          <code>
+            00007FF655E9A4F0  mov  byte ptr [rdx+rax*1], al  
+            00007FF655E9A4F3  inc  rax  
+            00007FF655E9A4F6  cmp  rax, rcx  
+            00007FF655E9A4F9  jb   0x7ff655e9a4f0  
+            00007FF655E9A4FB  ret
+          </code>
+          </pre>
+          <br>
+          This loop spans 11 bytes of instructions (from 0x7FF655E9A4F0 to 0x7FF655E9A4FB). Each iteration writes 1 byte but executes 11 bytes of instructions. On a CPU with a base frequency of 2.3 GHz (2,290,000,000 Hz) and Turbo Boost up to 2.8 GHz, and a peak measured bandwidth of 2.356 GB/s (2.356 * 1024^3 = 2,529,735,737.344 bytes/s), the cycles per byte (or cycles per loop) are: 2800000000 / 2529735737 = 1,10683497847 cycles/loop.
+        </p>
+        <p>
+          Let's add two additional tests.
+          In the first one we'll remove "mov" instruction.
+          <pre>
+          <code>
+            asm_no_mov_loop:
+              xor rax, rax
+              .loop:
+              inc rax
+              cmp rax, rcx
+              jb .loop
+              ret
+          </code>
+          </pre>
+          <br>
+          and the second is just a "dec"
+          <br>
+          <pre>
+          <code>
+            asm_dec_loop:
+              .loop:
+              dec rcx
+              jnz .loop
+              ret
+          </code>
+          </pre>
+          <br>
+          Results:<br>
+          <br>
+          No mov loop:<br>
+          <br>
+          Total time: 382.4215 ms<br>
+          Min/Max: 2.651 GB/s and 2.439 GB/s (0 page faults). <br>
+          <br>
+          dec loop:<br>
+          <br>
+          Total time : 381.4530 ms<br>
+          Min/Max : 2.649 GB/s and 2.512 GB/s (0 page faults).<br>
+          Calculating cycles per loop for the dec variant:<br>
+          <br>
+          2800000000 / 2844342091.776 ~= 0.984410422 cycles/loop<br>
+          <br>
+          Can this loop be optimized further? The bottleneck lies in the <b>dependency chain</b>. The mov instruction uses rax for address calculation, followed by an inc/dec operation that depends on the prior value of rax. This creates a sequential dependency: each iteration must wait for the previous mov and inc/dec to complete before proceeding. Modern superscalar CPUs can execute multiple instructions in parallel, but dependency chains prevent this parallelism. Let's analyze the impact of removing the mov instruction.
+          <br><br>
+          Even the modified loop (without mov) retains a dependency chain: the dec instruction must still complete before the next iteration begins. As a result, the CPU cannot achieve better than ~0.984 cycles per loop iteration for this specific code.
+          <br>
+        </p>
+      
+      <p>
+
+        
+        <ul>
+          <li><a href="../n3/pa_bench_1.html">Overview</a></li>
+          <li><a href="../n3/pa_bench_2.html">Profiling the game code;</a></li>
+          <li><a href="../n3/pa_bench_3.html">File I/O and page faults;</a></li>
+          <li>Measuring memory bandwidth;</li>
+          <li><a href="../n3/pa_bench_5.html">Instruction decoding;</a></li>
+          <li><a href="../n3/pa_bench_6.html">Testing branch prediction;</a></li>
+          <li><a href="../n3/pa_bench_7.html">Studying execution ports and schedulers;</a></li>
+          <li><a href="../n3/pa_bench_8.html">Assessing cache sizes and bandwidth;</a></li>
+          <br>
+            <i>In progress</i>
+          <br>
+          <li>Reviewing code from a performance perspective;</li>
+          <li>Introducing SIMD;</li>
+          <li>Multithreading.</li>
+        </ul>
+        
+        
+      </p>
+  </body>
+</html>

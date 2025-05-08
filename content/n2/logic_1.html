@@ -1,0 +1,114 @@
+<html>
+  <link rel="stylesheet" href="../../main.css">
+  <body>
+    <p class="page_top_border"></p>
+    <div id="header">
+      <a href="../../index.html" class="header_link">Notes</a>
+      <a href="../../projects.html" class="header_link">Projects</a>
+      <a href="../../math.html" class="header_link">Math</a>
+    </div>
+    <div id="content">
+      <div class="top_section">
+        <p class="subj"><span class="bold_text">Subject:</span> Gentzen-style natural deduction system</p>
+        <p class="top_summary"><span class="bold_text">Source:</span> <a href="https://www.logicmatters.net/tyl/">logic study guide</a></p>
+      </div>
+      <p>
+        Natural Deduction: Methods of Proving Statements.
+      </p>
+      <p>
+        A mathematical proof establishes the validity of a statement, referred to as its conclusion . Such proofs may rely on assumptions (premises taken for granted) and are formally defined as demonstrations of the conclusion from these assumptions.
+      </p>
+      <p>
+        Various logic systems formalize proof construction, including <b>Gentzen-style natural deduction</b>. In Gerhard Gentzen's approach, proofs are structured as <b>trees</b>, where formulas appear as nodes. The root represents the conclusion, while leaves correspond to initial assumptions (or "suppositions").
+      </p>
+      <p>
+        <b>Example</b>: Let &phi; and &psi; denote statements. The <b>^I</b> (and introduction) rule combines two statements (&phi;, &psi;) to derive their conjunction (&phi; ^ &psi;).
+        <p>
+          <img src="logic1.png">
+        </p>
+      </p>
+      <p>
+        There are other rules that are comment in proof. Arguments using "if", the (-> I) rule, basically implication introduction. Arguments using "if and only if", the (<-> I) rule. Arguments using "not", "or", etc.
+        Besides, these rules have also "elimination" counterparts, which "undo" the operation.
+        
+        Other common rules include:<br>
+        <br>
+        <ul>
+          <li>-> I (implication introduction): Derives "if &phi;, then &psi;" by assuming &phi; and proving &psi;.</li>
+          <li><->I (if and only if introduction): Establishes equivalence between statements.</li>
+          <li>not I (negation introduction) and vI (disjunction introduction).</li>
+        </ul>
+        Each rule has an elimination counterpart (e.g., ^E, ->E) to "undo" the operation.
+        <p>
+          <img src="logic3.png">
+        </p>
+      </p>
+      <p>
+        <h5>Formal Proofs and Metavariables:</h5>
+        Greek letters like &phi; and &psi; are metavariables ranging over statements (similar to how x and y range over numbers). A natural deduction proof of &phi; -> (&psi; -> &phi;) is not a proof of a specific statement but a template for infinitely many proofs. Such templates are termed formal proofs.
+      </p>
+      <p>
+        So logic studying patterns that infinitely many different statements could have. These patterns are the real subject matter of mathematical logic. To study them closer, we work with formal languages which are designed to express the patterns that are important for arguments. So for example "words" in this language are called (propositional) symbols.
+        <h5>Logic and Formal Languages:</h5>
+        Logic studies patterns that underlie infinitely many statements. To analyze these patterns rigorously, we use formal languages designed to encode argument structures. For instance, "words" in such languages are called propositional symbols (e.g., p , q).
+      </p>
+      <p>
+        <h5>Parsing Trees and Compositional Definitions:</h5>
+        Consider the formula p -> (not not p).
+        <p>
+          <img src="logic4.png">
+        </p>
+        <p>
+        Its parsing tree (a hierarchical diagram) represents syntactic structure. Rules for reconstructing formulas from parsing trees are called <b>compositional definitions</b>.
+        </p>
+        <p>
+          <img src="logic5.png">
+        </p>
+      </p>
+
+      <p>
+        <h5>Three such rules are:</h5>
+        Leaf nodes: Copy the symbol (e.g., p) to the left-hand side.<br>
+        Negation nodes: For a node labeled "not", write not &phi; , where &phi; is the formula from the daughter node.<br>
+        Binary nodes: For nodes with two daughters (e.g., ->), combine formulas per the operator's rules.<br>
+        These instructions unambiguously cover all syntactic cases.
+      </p>
+      <p>
+        <h5>Variants of Compositional Definitions:</h5>
+        Exercise 3.2.3 in Mathematical Logic by Ian Chiswell and Wilfrid Hodges introduces an alternative definition:
+        <p>
+          <img src="logic6.png">
+        </p>
+      </p>
+      <p>
+        Leaf nodes: An atomic symbol (e.g., p) counts as 1 symbol.<br>
+        Negation nodes: Adds 3 symbols to the count (e.g., the formula (not &phi;) includes parentheses and the negation operator, totaling 3 symbols).<br>
+        Binary nodes: Adds m + n + 3 symbols , where m and n are the symbol counts of the left and right subformulas (e.g., (&phi; ^ &psi;) contains 5 symbols: parentheses, operator, and the two subformulas).<br>
+        This compositional definition systematically calculates the total number of symbols in a formula.
+      </p>
+      <p>
+        Another example assigns odd positive integers to propositional symbols.
+        <p>
+          <img src="logic7.png">
+        </p>
+        A compositional definition then maps each parsing tree node to a number, with the root's value termed the Godel number. Exercise 3.2.5 challenges the reader to reconstruct a formula from its Godel number:
+        <p>
+          <img src="logic8.png">
+        </p>
+        <p>
+        Let's try to figure out what does this rule says<br>
+        1. According to the given table: 2^15 is a node p_1.<br>
+        2. 2^(p_1) x 3^9 = 2^m x 3^9 = (not p_1).<br>
+        So we have 2^(not p_1) x 3^(2^13) x 5^3.<br>
+        3. 2^13 = p_0.<br>
+        4. 2^(not p_0) x 3^(p_0) x 5^3. For 5^3, 3 is v.<br>
+        Resulting in ((not p_0) v p_0).<br>
+        So these numbers encode the function above.<br>
+        </p>
+      </p>
+  </body>
+</html>
+
+
+
+

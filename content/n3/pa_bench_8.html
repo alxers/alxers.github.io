@@ -1,0 +1,129 @@
+<html>
+  <link rel="stylesheet" href="../../main.css">
+  <body>
+    <p class="page_top_border"></p>
+    <div id="header">
+      <a href="../../index.html" class="header_link">Notes</a>
+      <a href="../../projects.html" class="header_link">Projects</a>
+      <a href="../../math.html" class="header_link">Math</a>
+    </div>
+    <div id="content">
+      <div class="top_section">
+        <p class="subj"><span class="bold_text">Subject:</span> cache sizes</p>
+      </div>
+      <p>
+        Previously, we constructed tests that performed memory reads/writes using only a single cache line. At the time, our focus was solely on determining the theoretical maximum speed. Now, we must also analyze behavior when data exceeds the capacity of a specific cache level.
+      </p>
+      <p>
+        The test follows the methodology suggested in the Performance-Aware Programming course. As before, we process 1 GB of data, but this time, we read memory in chunks starting at 64 bytes (for example), then 4 KB, 16 KB, 32 KB, and larger sizes. The L1 cache on Broadwell CPUs is typically 32 KB, so smaller chunks should fit entirely in L1. As chunk sizes grow, data spills into L2, L3, and eventually main memory. The results should reflect this hierarchy.
+      </p>
+      <pre>
+        <code>
+asm_cache_sizes:
+  align 64
+  mov rax, rdx
+  xor r9, r9
+  .loop:
+    vmovdqu ymm0, [rax+0]
+    vmovdqu ymm0, [rax+32]
+    vmovdqu ymm0, [rax+64]
+    vmovdqu ymm0, [rax+96]
+    vmovdqu ymm0, [rax+128]
+    vmovdqu ymm0, [rax+160]
+    vmovdqu ymm0, [rax+192]
+    vmovdqu ymm0, [rax+224]
+    add r9, 256
+    ; Apply mask
+    and r9, r8
+    mov rax, rdx
+    add rax, r9
+    ; Make sure counter updated
+    sub rcx, 256
+    jnz .loop
+    ret
+        </code>
+      </pre>
+      <p>
+        Results:<br>
+        <br>
+          64 bytes : Total time 5.9568 ms.<br>
+          Min: 1,024 MB at 171.860 GB/s (page faults: 0).<br>
+          Max: 1,024 MB at 145.850 GB/s.<br>
+          <br>
+          4 KB: Total time 6.0118 ms.<br>
+          Min: 171.886 GB/s.<br>
+          Max: 139.120 GB/s.<br>
+          <br>
+          32 KB: Total time 6.4872 ms.<br>
+          Min: 161.549 GB/s.<br>
+          Max: 94.927 GB/s.<br>
+          <br>
+          64 KB: Total time 13.0000 ms.<br>
+          Min: 84.212 GB/s.<br>
+          Max: 66.529 GB/s.<br>
+          <br>
+          128 KB: Total time 14.3033 ms.<br>
+          Min: 76.010 GB/s.<br>
+          Max: 62.602 GB/s.<br>
+          <br>
+          256 KB: Total time 16.4507 ms.<br>
+          Min: 61.058 GB/s.<br>
+          Max: 43.922 GB/s.<br>
+          <br>
+          512 KB : Total time 34.1319 ms.<br>
+          Min: 30.194 GB/s.<br>
+          Max: 26.114 GB/s.<br>
+          <br>
+          1 MB: Total time 33.6975 ms.<br>
+          Min: 30.178 GB/s.<br>
+          Max: 25.013 GB/s.<br>
+          <br>
+          2 MB: Total time 36.3865 ms.<br>
+          Min: 29.990 GB/s.<br>
+          Max: 23.638 GB/s.<br>
+          <br>
+          4 MB: Total time 68.4680 ms.<br>
+          Min: 15.313 GB/s.<br>
+          Max: 12.097 GB/s.<br>
+          <br>
+          8 MB: Total time 89.1476 ms.<br>
+          Min: 11.731 GB/s.<br>
+          Max: 9.399 GB/s.<br>
+          <br>
+          16 MB: Total time 88.3279 ms.<br>
+          Min: 11.443 GB/s.<br>
+          Max: 9.617 GB/s.<br>
+          <br>
+          512 MB: Total time 96.4798 ms.<br>
+          Min: 11.317 GB/s.<br>
+          Max: 5.715 GB/s.<br>
+          <br>
+          1 GB: Total time 89.8340 ms.<br>
+          Min: 11.307 GB/s.<br>
+          Max: 5.483 GB/s.<br>
+      </p>
+
+      <p>
+
+        
+                <ul>
+          <li><a href="../n3/pa_bench_1.html">Overview</a></li>
+          <li><a href="../n3/pa_bench_2.html">Profiling the game code;</a></li>
+          <li><a href="../n3/pa_bench_3.html">File I/O and page faults;</a></li>
+          <li><a href="../n3/pa_bench_4.html">Measuring memory bandwidth;</a></li>
+          <li><a href="../n3/pa_bench_5.html">Instruction decoding;</a></li>
+          <li><a href="../n3/pa_bench_6.html">Testing branch prediction;</a></li>
+          <li><a href="../n3/pa_bench_7.html">Studying execution ports and schedulers;</a></li>
+          <li>Assessing cache sizes and bandwidth;</li>
+          <br>
+            <i>In progress</i>
+          <br>
+          <li>Reviewing code from a performance perspective;</li>
+          <li>Introducing SIMD;</li>
+          <li>Multithreading.</li>
+        </ul>
+        
+        
+      </p>
+  </body>
+</html>

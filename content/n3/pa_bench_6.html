@@ -1,0 +1,99 @@
+<html>
+  <link rel="stylesheet" href="../../main.css">
+  <body>
+    <p class="page_top_border"></p>
+    <div id="header">
+      <a href="../../index.html" class="header_link">Notes</a>
+      <a href="../../projects.html" class="header_link">Projects</a>
+      <a href="../../math.html" class="header_link">Math</a>
+    </div>
+    <div id="content">
+      <div class="top_section">
+        <p class="subj"><span class="bold_text">Subject:</span> branch prediction analysis</p>
+      </div>
+      <p>
+        Continuing with the loop example from earlier, we explore how branch prediction impacts performance. Modern CPUs decode multiple instructions per cycle, but jumps like jb (jump if below) introduce uncertainty: the CPU must guess whether the branch will be taken based on conditional flags. A misprediction forces the frontend to flush decoded instructions and re-fetch the correct path - a costly penalty.
+      </p>
+      <p>
+        To test branch prediction efficiency, we modified the loop to include a conditional jump:<br>
+        <br>
+        <pre>
+          <code>
+asm_branch_pred:  
+  xor rax, rax  
+.loop:  
+  mov r10, [rdx+rax]  
+  inc rax  
+  test r10, 1  
+  jnz .skip  
+    nop  
+.skip:  
+  cmp rax, rcx  
+  jb .loop  
+  ret
+          </code>
+        </pre>
+        <br>
+        (Source: <a href="https://github.com/cmuratori/computer_enhance/blob/main/perfaware/part3/listing_0136_conditional_nop_loops.asm">github.com/cmuratori</a>)
+      </p>
+      <p>
+        The loop tests the least significant bit of r10 register value: if set, it skips a nop. No computational work occurs in the branch-only frontend decoding overhead. We tested buffers with patterns like all zeros (never taken), all ones (always taken), periodic intervals (e.g., every 2nd, 4th, or 8th iteration), and random values (BCrypt-generated).
+      </p>
+      Results:<br>
+      <br>
+      Never Taken:<br>
+      Total time: 562.4655 ms<br>
+      Min/Max: 1.817 GB/s and 1.394 GB/s.<br>
+      <br>
+      Always Taken:<br>
+      Total time: 786.6097 ms<br>
+      Min/Max: 1.274 GB/s and 1.113 GB/s.<br>
+      <br>
+      Every 2nd Taken:<br>
+      Total time: 639.6436 ms<br>
+      Min/Max: 1.650 GB/s and 1.086 GB/s.<br>
+      <br>
+      Every 4th/8th Taken:<br>
+      Total time: ~506–509 ms<br>
+      Min/Max: ~1.98–2.0 GB/s.<br>
+      <br>
+      BCrypt Random:<br>
+      Total time: 4,905.2049 ms<br>
+      Min/Max: 0.229 GB/s and 0.204 GB/s.<br>
+    </p>
+    <p>
+      The results show that the best performance occurs when branches are never taken or taken every 4th/8th iteration (surprisingly consistent). Intel's optimization manual recommends structuring code to favor never-taken conditions, which aligns with our findings. As expected, random branch patterns perform poorly, causing significant slowdowns due to frequent mispredictions.
+    </p>
+    <p>
+      To quantify the penalty, we calculate:<br>
+      0.229 * 1024 * 1024 * 1024 = 245886877.696, 2.8 * 1000 * 1000 * 1000 = 2800000000, 2800000000 / 245886877.696 = 11.38735025730716088974
+      or 11.4 cycles/byte.
+    </p>
+    <p>
+      This implies a ~11-cycle penalty per misprediction, aligning with Agner Fog's analysis of Broadwell CPUs: "The branch misprediction penalty varies a lot. It was measured to 15–20 clock cycles." While our result (~11 cycles) is slightly lower, it reflects pipeline overlap and matches the expected order of magnitude.
+    </p>
+      
+      <p>
+
+        
+                <ul>
+          <li><a href="../n3/pa_bench_1.html">Overview</a></li>
+          <li><a href="../n3/pa_bench_2.html">Profiling the game code;</a></li>
+          <li><a href="../n3/pa_bench_3.html">File I/O and page faults;</a></li>
+          <li><a href="../n3/pa_bench_4.html">Measuring memory bandwidth;</a></li>
+          <li><a href="../n3/pa_bench_5.html">Instruction decoding;</a></li>
+          <li>Testing branch prediction;</li>
+          <li><a href="../n3/pa_bench_7.html">Studying execution ports and schedulers;</a></li>
+          <li><a href="../n3/pa_bench_8.html">Assessing cache sizes and bandwidth;</a></li>
+          <br>
+            <i>In progress</i>
+          <br>
+          <li>Reviewing code from a performance perspective;</li>
+          <li>Introducing SIMD;</li>
+          <li>Multithreading.</li>
+        </ul>
+        
+        
+      </p>
+  </body>
+</html>

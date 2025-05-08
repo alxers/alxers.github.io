@@ -1,0 +1,67 @@
+<html>
+  <link rel="stylesheet" href="../../main.css">
+  <body>
+    <p class="page_top_border"></p>
+    <div id="header">
+      <a href="../../index.html" class="header_link">Notes</a>
+      <a href="../../projects.html" class="header_link">Projects</a>
+      <a href="../../math.html" class="header_link">Math</a>
+    </div>
+    <div id="content">
+      <div class="top_section">
+        <p class="subj"><span class="bold_text">Subject:</span> file I/O and page faults</p>
+      </div>
+      <p>
+        Before rendering anything, we must first load the assets file, which contains all in-game images. As observed earlier, the first frame takes significantly longer to load. Let's investigate why.
+      </p>
+      <p>
+        When memory is allocated, the address returned is virtual, not physical. Operating systems often defer allocating physical memory until it is actively used (e.g., read from or written to). Memory is managed in pages, typically 4 KB (4,096 bytes) on Windows. Only when a page is accessed does the OS map the virtual address to a physical RAM location. This mapping triggers a system interrupt, introduces latency, and creates a page fault - a non-negligible performance cost.
+      </p>
+      <p>
+        The first frame's slowness stems from numerous page faults during initial memory access. This highlights why minimizing dynamic allocations during runtime is critical. After the first frame, however, all memory is mapped, and no new page faults occur. The game uses memory arenas (pre-allocated pools), ensuring memory is reserved once at startup.
+      </p>
+      <p>
+        To quantify the impact of allocations on memory bandwidth (GB/s), we ran two tests:<br>
+
+        Test 1 : Allocate memory each time a file is read.<br>
+        Test 2 : Allocate memory once and reuse it.
+      </p>
+      <p>
+        Results:<br>
+
+        <b>Allocate each time:</b><br>
+        Total time: 3.1826 ms<br>
+        Min: 4.000 MB at 1.837 GB/s (1,027 page faults)<br>
+        Max: 4.000 MB at 0.674 GB/s (1,034 page faults)<br>
+        <br>
+        <b>No allocation:</b><br>
+        Total time: 1.6554 ms<br>
+        Min/Max: 4.000 MB at 2.435 GB/s (0 page faults)<br>
+        <br>
+        These results align with profiler data: eliminating page faults exposes the system's memory bandwidth limits . Let's now measure the hardware's theoretical bandwidth to contextualize these numbers.
+      </p>
+      
+      <p>
+
+        
+        <ul>
+          <li><a href="../n3/pa_bench_1.html">Overview</a></li>
+          <li><a href="../n3/pa_bench_2.html">Profiling the game code;</a></li>
+          <li>File I/O and page faults;</li>
+          <li><a href="../n3/pa_bench_4.html">Measuring memory bandwidth;</a></li>
+          <li><a href="../n3/pa_bench_5.html">Instruction decoding;</a></li>
+          <li><a href="../n3/pa_bench_6.html">Testing branch prediction;</a></li>
+          <li><a href="../n3/pa_bench_7.html">Studying execution ports and schedulers;</a></li>
+          <li><a href="../n3/pa_bench_8.html">Assessing cache sizes and bandwidth;</a></li>
+          <br>
+            <i>In progress</i>
+          <br>
+          <li>Reviewing code from a performance perspective;</li>
+          <li>Introducing SIMD;</li>
+          <li>Multithreading.</li>
+        </ul>
+        
+        
+      </p>
+  </body>
+</html>

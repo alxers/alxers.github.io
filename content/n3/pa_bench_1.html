@@ -1,0 +1,172 @@
+<html>
+  <link rel="stylesheet" href="../../main.css">
+  <body>
+    <p class="page_top_border"></p>
+    <div id="header">
+      <a href="../../index.html" class="header_link">Notes</a>
+      <a href="../../projects.html" class="header_link">Projects</a>
+      <a href="../../math.html" class="header_link">Math</a>
+    </div>
+    <div id="content">
+      <div class="top_section">
+        <p class="subj"><span class="bold_text">Subject:</span> profiling and optimizing a software renderer</p>
+        <p class="top_summary"><span class="bold_text">Source:</span> <a href="computerenhance.com">computerenhance.com</a>, intel architecture manual</p>
+      </div>
+      <p>
+        The goal of this and subsequent notes is to outline the process of profiling and optimizing a simple 2D game engine that uses a software renderer (all rendering occurs on the CPU, with no GPU involvement).
+      </p>
+      <p>
+        The profiler used here was developed as part of the Performance-Aware Programming course by <a href="computerenhance.com">computerenhance.com</a>. Implementation is straightforward: it leverages the __rdtsc instruction, which returns the number of CPU cycles elapsed since system boot. By wrapping code blocks with __rdtsc, we can measure the cycles consumed by specific profiling segments.
+      </p>
+      <p>
+        <h5>Profiling Scope:</h5>
+        First, we will measure the total cycles required for the game loop (one full frame). Next, we will analyze the renderer, as CPU-based rendering is inherently slower than GPU-accelerated alternatives. Finally, we will profile individual components of the renderer function.
+      </p>
+      <p>
+        The renderer itself is relatively simple. It reads a .bmp file containing all game graphics, extracts the required image, and copies it to a preallocated buffer. This buffer is then passed to an OS API for display. Here is the renderer’s source code:
+        <div>
+          <pre>
+            <code>
+void
+DrawBmp(
+  struct win32_screen_buffer *ScreenBuffer, u32 *BmpPixels,
+  s32 ImgRow, s32 ImgCol,
+  s32 StartX, s32 StartY, s32 Width, s32 Height
+)
+{
+  BEGIN_BLOCK_PF(2);
+  if(StartX < 0)
+  {
+    StartX = 0;
+  }
+  if(StartY < 0)
+  {
+    StartY = 0;
+  }
+  if(StartX > ScreenBuffer->Width)
+  {
+    StartX = ScreenBuffer->Width;
+  }
+  if(StartY> ScreenBuffer->Height)
+  {
+    StartY = ScreenBuffer->Height;
+  }
+
+  // Get tile from tile atlas using offset
+  // 1 - first column, 1 - first row (both start from 0)
+  // Bmp for N-th tile
+  // f.e. N = 3
+  // Then our bmp for tile is from *BmpPixels[X + Y*TILE_ATLAS_WIDTH]
+  // *BmpPixels[1 + 1*1024]
+  u32 OffsetPixX = ImgCol * Width;
+  u32 OffsetPixY = ImgRow * Height;
+
+  u32 *CurrPixelInBmp = BmpPixels + (OffsetPixX + OffsetPixY * BMP_ATLAS_WIDTH);
+  s32 PixelCounter = 0;
+
+  // The image is stored in memory in the following way:
+  // f.e. it's a 4 by 4 pixel image
+  // Red   White
+  // White Green
+  // Memory window:
+  //      white         green         red           white
+  // | FF FF FF FF | 00 FF 00 FF | 00 00 FF FF | FF FF FF FF |
+  // It's also in BGRA order for each pixel
+
+  // BMP image is upside down, need to reverse
+  // Start from the last row
+  // Example: bmp image is width=4, height=3
+  // ScreenBuffer->Memory is casted to a byte (points to the upper left screen corner f.e.)
+  // Preadvance it by adding (Height-1)*(ScreenBuffer->Pitch)
+  // where Height-1 is the last row of an image and Pitch is ScreenWidth*BytesPerPixel (f.e. 600*4)
+  // representing one full row of a screen pixels
+  u8 *Row = (u8 *)ScreenBuffer->Memory +
+    StartX * ScreenBuffer->BytesPerPixel +
+    ((StartY + Height-1)*(ScreenBuffer->Pitch));
+  for(s32 Y = StartY; Y < StartY+Height; Y++)
+  {
+    u32 *Pixel = (u32 *)Row;
+    for(s32 X = StartX; X < StartX+Width; X++)
+    {
+      BEGIN_BLOCK(3);
+      // When Width is a multiple of pixel counter
+      // it means we reached the end of the current image row
+      // then advance to the next pixel row of the image
+      for(s32 Iter = 1; Iter <= 4; Iter++)
+      {
+        if((PixelCounter && ((PixelCounter % Width) == 0)) && (PixelCounter < Height*Width))
+        {
+          // Add the whole atlas width, but compensate the tile width
+          // as we were already at the end of the current image row
+          // f.e. when drawing White
+          //      white         green                        red           white
+          // | FF FF FF FF | 00 FF 00 FF | .. .. .. ..  | 00 00 FF FF | FF FF FF FF |
+          //               ^                                          ^
+          //         move from here                                to here
+          CurrPixelInBmp += (BMP_ATLAS_WIDTH - Width);
+        }
+        PixelCounter += Iter;
+      }
+
+      // Colors may not correspond (in case it's in BRG f.e.), but
+      // it doesn't matter here
+
+      // In order to use these values for calculations
+      // we need to shift it and then mask
+      // Masking with 0x000000FF, 0x0000FF00, 0x00FF0000 won't work in this case
+      f32 SourceAlpha = (f32)((*CurrPixelInBmp >> 24) & 0xFF) / 255.0f; // 0xFF is 255 (0000 0000 0000 0000 1111 1111)
+      f32 SourceRed = (f32)((*CurrPixelInBmp >> 16) & 0xFF);
+      f32 SourceGreen = (f32)((*CurrPixelInBmp >> 8) & 0xFF);
+      f32 SourceBlue = (f32)((*CurrPixelInBmp >> 0) & 0xFF);
+
+      f32 DestRed = (f32)((*Pixel >> 16) & 0xFF);
+      f32 DestGreen = (f32)((*Pixel >> 8) & 0xFF);
+      f32 DestBlue = (f32)((*Pixel >> 0) & 0xFF);
+
+      f32 ResultRed = (1.0f - SourceAlpha) * DestRed + SourceRed * SourceAlpha;
+      f32 ResultGreen = (1.0f - SourceAlpha) * DestGreen + SourceGreen * SourceAlpha;
+      f32 ResultBlue = (1.0f - SourceAlpha) * DestBlue + SourceBlue * SourceAlpha;
+
+      u32 Result = ((u32)(ResultRed + 0.5f) << 16) |
+        ((u32)(ResultGreen + 0.5f) << 8) |
+        ((u32)(ResultBlue + 0.5f) << 0);
+
+      *Pixel = Result;
+      Pixel++;
+      CurrPixelInBmp++;
+      PixelCounter++;
+      END_BLOCK(3);
+    }
+    Row -= ScreenBuffer->Pitch;
+  }
+  END_BLOCK_COUNTED_PF(2, PixelCounter/8);
+}
+            </code>
+          </pre>
+        </div>
+      </p>
+      <p>
+        As emphasized in the Performance-Aware Programming course, optimizing performance requires first identifying bottlenecks and then determining their theoretical maximum efficiency. To achieve this, we will use benchmarks from the course to evaluate hardware capabilities (e.g., memory bandwidth, file I/O, branch prediction). Armed with this data, we can make informed optimization decisions.
+      </p>
+      <p>
+        Content:
+        <ul>
+          <li>Overview</li>
+          <li><a href="../n3/pa_bench_2.html">Profiling the game code;</a></li>
+          <li><a href="../n3/pa_bench_3.html">File I/O and page faults;</a></li>
+          <li><a href="../n3/pa_bench_4.html">Measuring memory bandwidth;</a></li>
+          <li><a href="../n3/pa_bench_5.html">Instruction decoding;</a></li>
+          <li><a href="../n3/pa_bench_6.html">Testing branch prediction;</a></li>
+          <li><a href="../n3/pa_bench_7.html">Studying execution ports and schedulers;</a></li>
+          <li><a href="../n3/pa_bench_8.html">Assessing cache sizes and bandwidth;</a></li>
+          <br>
+            <i>In progress</i>
+          <br>
+          <li>Reviewing code from a performance perspective;</li>
+          <li>Introducing SIMD;</li>
+          <li>Multithreading.</li>
+        </ul>
+      </p>
+  </body>
+</html>
+
