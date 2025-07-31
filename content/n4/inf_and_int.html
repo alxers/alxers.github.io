@@ -1,0 +1,324 @@
+<html>
+  <link rel="stylesheet" href="../../main.css">
+  <body>
+    <div id="header">
+      <a href="../../index.html" class="header_link">Notes</a>
+      <a href="../../projects.html" class="header_link">Projects</a>
+    </div>
+    <div id="content">
+      <div class="top_section">
+        <p class="subj"><span class="bold_text">Subject: </span>Intuition behind infinities in mathematics</p>
+<!--         <p class="top_summary"><span class="bold_text">
+          Sources: </span>"Understanding analysis" by Stephen Abbott, "Real Analysis: A Long-Form Mathematics Textbook" by Jay Cummings
+        </p> -->
+        <p class="top_summary">
+          <span class="bold_text">Sources:</span>
+          <ul>
+            <li>"Understanding analysis" by Stephen Abbott</li>
+            <li>"Real Analysis: A Long-Form Mathematics Textbook" by Jay Cummings</li>
+          </ul>
+        </p>
+      </div>
+      <p>
+        Imagine you have 10 apples. Give away 5, and you’re left with fewer - obvious, right? Or suppose you want to add fractions and expect <math><mfrac><mn>1</mn><mn>2</mn></mfrac><mo>+</mo><mfrac><mn>1</mn><mn>3</mn></mfrac></math> to equal <math><mfrac><mn>1</mn><mn>3</mn></mfrac><mo>+</mo><mfrac><mn>1</mn><mn>2</mn></mfrac></math> because addition is commutative. But when we enter the realm of infinity, these intuitions shatter.
+      </p>
+      <p>
+        We'll explore how an infinite hotel, fully booked, could still accommodate new guests - even infinitely many - and how some infinities are larger than others. This is the paradoxical universe of mathematical infinity.
+      </p>
+      <h3>Hilbert's Hotel: A Paradox of the Infinite</h3>
+      <p>
+        Consider Hilbert's Hotel, a thought experiment by mathematician David Hilbert.
+      </p>
+      <p>
+        Imagine a hotel with infinitely many rooms, numbered 1, 2, 3, ..., all occupied. When a new guest arrives, the manager shifts the guest in Room 1 to Room 2, Room 2 to Room 3, and so on. Suddenly, Room 1 is free!
+      </p>
+      <p>
+        Now, suppose an infinite busload of new guests arrives. The manager asks everyone to move to the room double their current number (Room 1 &rarr; 2, Room 2 &rarr; 4, etc.). All odd-numbered rooms become vacant, freeing up infinite space for the newcomers.
+      </p>
+
+      <p>
+        This defies finite-world logic: the hotel was "full", yet it absorbed more guests without expanding. Infinity bends our understanding of quantity - it isn't a fixed size but a dynamic concept.
+      </p>
+      <h3>What This Teaches Us</h3>
+      <p>
+        First, Hilbert's Hotel reveals that intuition fails spectacularly with infinity. Second, notice that every time guests switch rooms, the same people occupy new rooms. This shows there are "just as many" rooms from 1 to &infin; as from 2 to &infin; (or any other starting point). The same logic applies to accommodating infinite new guests: the hotel's occupancy status never changes - it's always "full", yet always flexible. To formalize this, mathematicians use sets and cardinality.
+      </p>
+      <p>
+        A set is a collection of objects (e.g., {1, 2, 3} or {a, b, c}). Two sets have the same cardinality (size) if there exists a function - a one-to-one and onto mapping - between them. We write this as f : A &rarr; B.
+      </p>
+      <p>
+        For finite sets, cardinality is simple:
+        <ul>
+          <li>|{a, b, c}| = 3</li>
+          <li>|{1, 4, 9, …, 100}| = 10</li>
+          <li>|&Nopf;| = &infin; *</li>
+        </ul>
+        * &Nopf; is a set of natural numbers, that is { 1, 2, 3, ..., }. Some mathematicians include 0 into this set.
+      </p>
+      <p>
+        Example 1: {1, 2, 3} and {a, b, c} have the same cardinality because we can pair elements: 1 &harr; b, 2 &harr; a, 3 &harr; c. The pairing could be different, as long it is a one-to-one and onto.
+      </p>
+      <p>
+        Example 2: {x, y, z} and {m, a, t, h} do not - no pairing covers all four letters.
+      </p>
+
+      <h3>Infinity vs. Intuition</h3>
+      <p>
+        Let E = {2, 4, 6, ...} be the even natural numbers. Surprisingly, |&Nopf;| = |E|. Define f : &Nopf; &rarr; E by f(n) = 2n:
+        <div>
+          <pre>
+            &Nopf;: 1  2  3  ...
+            E: 2  4  6  ...
+          </pre>
+        </div>
+        Though E is a proper subset of &Nopf; (suggesting it should be "smaller"), their cardinalities match. This clashes with finite-set intuition but aligns perfectly with the definition of cardinality.
+        <br>
+        Similarly &Nopf; and &Zopf; (integers) have the same cardinality. Let the mapping f(n) be equal to 
+        <math>
+          <mfrac>
+            <mrow>
+              <mi>n</mi>
+              <mo>-</mo>
+              <mn>1</mn>
+            </mrow>
+            <mi>2</mi>
+          </mfrac>
+        </math>
+        if n is odd and
+        <math>
+          <mo>-</mo>
+          <mfrac>
+            <mn>n</mn>
+            <mn>2</mn>
+          </mfrac>
+        </math>
+        if n is even.
+        <div>
+          <pre>
+            &Nopf;: 1   2  3   4  5   6 ...
+            &Zopf;: 0  -1  1  -2  2  -3 ...
+          </pre>
+        </div>
+      </p>
+      <p>
+        Even the rational numbers &Qopf; are equivalent to &Nopf;, though to showing that is a little bit more involved. These sets are countable.
+      </p>
+
+      <h3>Not All Infinities Are Equal</h3>
+      <p>
+        A set is countable if its cardinality equals |&Nopf;| An uncountable set has no mapping with &Nopf;. Is every infinite set countable? Intuition suggests "yes" - infinity leaves "plenty of room." But as G.H. Hardy remarks, "[The mathematician's] subject is the most curious of all - there is none in which truth plays such odd pranks."
+      </p>
+      <p>
+        The real numbers &Ropf; are uncountable. Cantor proved this elegantly for the interval (0, 1), which is even more strong claim (see the details of this proof here - Beauty of Cantor's diagonal method link), implying |&Ropf;| &gt; |&Nopf;|.
+      </p>
+
+      <h3>How Many Infinities Are There?</h3>
+      <p>
+        Infinitely many! To see why, we need the definition of a power set - the set of all subsets of A, denoted &weierp;(A).
+        Example:
+        <ul>
+          <li>If A = {1, 2}, then &weierp;(A) = {&empty;, {1}, {2}, {1, 2}}. Note that &empty; is an empty set. It's always a subset of any set.</li>
+          <li>If B = {a, b, c}, then &weierp;(B) = {&empty;, {a}, {b}, {c}, {a, b}, {a, c}, {b, c}, {a, b, c}}.</li>
+        </ul>
+      </p>
+      <p>
+        In general |A| < |&weierp;(A)|. This generates an endless chain of infinities:
+        <p>
+          |&Nopf;| < |&weierp;(&Nopf;)| < |&weierp;(&weierp;(&Nopf;))| < |&weierp;(&weierp;(&weierp;(&Nopf;)))| < ...
+        </p>
+        But what is the cardinality of the "set of all infinities"? No such set exists. The collection of all cardinalities is "too big" to be a set.
+      </p>
+
+      <h3>Rearrangements of Infinite Series</h3>
+      <p>
+        Consider the series of fractions that continues to infinity:
+        <p>
+          <math display="block">
+            <mfrac>
+              <mn>1</mn><mn>1</mn>
+            </mfrac>
+            <mo>-</mo>
+            <mfrac>
+              <mn>1</mn><mn>2</mn>
+            </mfrac>
+            <mo>+</mo>
+            <mfrac>
+              <mn>1</mn><mn>3</mn>
+            </mfrac>
+            <mo>-</mo>
+            <mfrac>
+              <mn>1</mn><mn>4</mn>
+            </mfrac>
+            <mo>+</mo>
+            <mfrac>
+              <mn>1</mn><mn>5</mn>
+            </mfrac>
+            <mo>-</mo>
+            <mfrac>
+              <mn>1</mn><mn>6</mn>
+            </mfrac>
+            <mo>...</mo>
+          </math>
+        </p>
+        If we sum the terms sequentially, we obtain partial sums s<sub>n</sub> (the sum of the first n terms):
+        <ul>
+          <li>s<sub>1</sub> = 1</li>
+          <li>s<sub>2</sub> = 1/2</li>
+          <li>s<sub>3</sub> = 5/6</li>
+          <li>s<sub>4</sub> = 7/12</li>
+        </ul>
+        Summing a few hundred terms reveals that S &asymp; 0.69. Whatever its value, there is now an overwhelming temptation to write:
+        <p>
+          <math display="block">
+            <mfrac>
+              <mo>(1)</mo>
+            </mfrac>
+            <mfrac>
+              <mo>S = </mo>
+            </mfrac>
+            <mfrac>
+              <mn>1</mn><mn>1</mn>
+            </mfrac>
+            <mo>-</mo>
+            <mfrac>
+              <mn>1</mn><mn>2</mn>
+            </mfrac>
+            <mo>+</mo>
+            <mfrac>
+              <mn>1</mn><mn>3</mn>
+            </mfrac>
+            <mo>-</mo>
+            <mfrac>
+              <mn>1</mn><mn>4</mn>
+            </mfrac>
+            <mo>+</mo>
+            <mfrac>
+              <mn>1</mn><mn>5</mn>
+            </mfrac>
+            <mo>-</mo>
+            <mfrac>
+              <mn>1</mn><mn>6</mn>
+            </mfrac>
+            <mo>...</mo>
+          </math>
+        </p>
+      </p>
+      <p>
+        But here's the problem: the familiar symbols +, -, and = are now operating in uncharted territory. Do the properties of finite addition hold for infinite sums?
+      </p>
+
+      <h4>The Rearrangement Paradox</h4>
+      <p>
+        Treat Equation (1) algebraically: Multiply by <math><mfrac><mn>1</mn><mn>2</mn></mfrac></math> then add back to the original series:
+        <p>
+          <img src="not_commutative.png" class="img_full_width">
+        </p>
+      </p>
+      <p>
+        Upon closer inspection, equations (1) and (2) contain identical terms, just reordered. This rearrangement alters the series sum, inflating it to 3/2 times its original value. For instance, computing the first few hundred terms of equation (2) yields partial sums clustering around 1.03 - a concrete demonstration of how infinite series defy finite intuition.
+      </p>
+      <p>
+        While addition in finite contexts is commutative (order-independent), infinite rearrangements expose a hidden fragility in the behavior of divergent or conditionally convergent series.
+      </p>
+
+      <h4>When Commutativity Holds</h4>
+      <p>
+        Let's look at a similar rearrangement of the series:
+        <p>
+          <math display="block">
+            <mfrac>
+              <mn>1</mn><mn>1</mn>
+            </mfrac>
+            <mo>-</mo>
+            <mfrac>
+              <mn>1</mn><mn>2</mn>
+            </mfrac>
+            <mo>+</mo>
+            <mfrac>
+              <mn>1</mn><mn>4</mn>
+            </mfrac>
+            <mo>-</mo>
+            <mfrac>
+              <mn>1</mn><mn>8</mn>
+            </mfrac>
+            <mo>+</mo>
+            <mfrac>
+              <mn>1</mn><mn>16</mn>
+            </mfrac>
+            <mo>-</mo>
+            <mfrac>
+              <mn>1</mn><mn>32</mn>
+            </mfrac>
+            <mo>...</mo>
+          </math>
+        </p>
+      </p>
+      <p>
+        This series is geometric with first term 1 and common ratio r = −1/2. Using the formula 1/(1 − r) for the sum of a geometric series, we get:
+        <p>
+          <img src="is_commutative_1.png" class="img_full_width">
+        </p>
+        This time, some computational experimentation with the "two positives, one negative" rearrangement
+        <p>
+          <img src="is_commutative_2.png" class="img_full_width">
+        </p>
+        yields partial sums quite close to 2/3. The sum of the first 30 terms, for instance, equals 0.666667. Infinite addition is commutative in some instances but not in others.
+      </p>
+
+      <h4>Associativity Breaks Too</h4>
+      <p>
+        The associative property - where regrouping terms doesn't change a sum - also collapses for infinite series. Consider the series:
+        <p>
+          (-1 + 1) + (-1 + 1) + (-1 + 1) + (-1 + 1) + ... = 0 + 0 + 0 + 0 + ··· = 0,
+        </p>
+        whereas grouping in another yields
+        <p>
+          -1 + (1 - 1) + (1 - 1) + (1 - 1) + (1 - 1) + ... = -1 + 0 + 0 + 0 + 0 + ... = -1.
+        </p>
+      </p>
+      <p>
+        Same series, different sums. Manipulations that are legitimate in finite settings do not always extend to infinite settings. Deciding when they do and why they do not is one of the central themes of real analysis.
+      </p>
+
+      <h3>A few more paradoxes</h3>
+      <p>
+        Imagine a square, like a chessboard. Intuitively, the entire square should have "more" points than just one of its edges, right? After all, the square spans two dimensions, while the edge is one-dimensional. But Cantor proved they have the same cardinality - you can pair every point in the square with a unique point on its edge, and vice versa.
+      </p>
+      <p>
+        How?<br>
+        By interleaving decimal expansions. For example, take a point (0.123456..., 0.789012...) in the square. Map it to a single number 0.172839405162... by alternating digits from both coordinates. This creates a one-to-one correspondence between the square’s points and the interval [0,1].
+      </p>
+      <p>
+        This defies geometric intuition. A 2D surface and a 1D line have the same "size" in terms of infinity.
+      </p>
+      <h4>The Banach-Tarski Paradox: Doubling Spheres with Math</h4>
+      <p>
+        Given a solid ball in 3D space, you can divide it into a finite number of pieces and reassemble those pieces - using only rotations and translations - to form two solid balls, each the same size as the original. 
+      </p>
+      <p>
+        It seems to violate conservation of volume. You're not stretching or compressing - just moving and rotating. However, the paradox only works in the abstract world of infinite divisibility.
+      </p>
+
+      <h3>Paradox<sup>2</sup></h3>
+      <p>
+        Paradoxically, the mathematicians who uncovered infinity's strangeness were themselves guided by intuition. Intuition is both mathematics' greatest ally and its most deceptive foe.
+        <blockquote>
+          "The majority of the material [...] is attributable to the mathematicians working in the early and middle parts of the 1800s. Augustin Louis Cauchy, Bernhard Bolzano, Niels Henrik Abel, Peter Lejeune Dirichlet, Karl Weierstrass, and Bernhard Riemann all figure prominently in the discovery of the theorems that follow. But here is the interesting point. Nearly all of this work was done using intuitive assumptions [...]."
+          (Adapted from Understanding Analysis by Stephen Abbott)
+        </blockquote>
+      </p>
+      <p>
+        These pioneers leaned on intuition - the same intuition that tells us:
+        <ul>
+          <li>"The whole is greater than the part" (shattered by Hilbert's Hotel)</li>
+          <li>"Rearranging terms doesn't change a sum" (refuted by conditional convergence)</li>
+          <li>"Infinity is monolithic" (destroyed by Cantor's diagonalization)</li>
+        </ul>
+      </p>
+      <p>
+        Yet their intuitive leaps uncovered paradoxes demanding rigor. The very infinities that confused them became the crucible where analysis was forged. Subject emerged not despite intuition's failures, but because of them.
+      </p>
+    </div>
+  </body>
+</html>
+ 

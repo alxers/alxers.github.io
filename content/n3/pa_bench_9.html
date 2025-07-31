@@ -1,0 +1,529 @@
+<html>
+  <link rel="stylesheet" href="../../main.css">
+  <body>
+    <div id="header">
+      <a href="../../index.html" class="header_link">Notes</a>
+      <a href="../../projects.html" class="header_link">Projects</a>
+    </div>
+    <div id="content">
+      <div class="top_section">
+        <p class="subj"><span class="bold_text">Subject:</span> Improving performance with SIMD</p>
+      </div>
+      <p>
+        As we previously tested the whole system performance we can now make weighted decisions on how to improve the code and where the actual bottlenecks are.
+      </p>
+      <p>
+        Let's review the sprite rendering function, which draws images to the screen. This function accepts several parameters:
+        <ul>
+          <li>win32_screen_buffer - pointer for the target display buffer</li>
+          <li>u32 array - BmpPixels - containing the sprite's raw pixel data</li>
+          <li>source offsets - ImgRow, ImgCol - specifying the sprite's position within its file</li>
+          <li>screen coordinates - StartX, StartY</li>
+          <li>and the sprite's dimensions - Width, Height</li>
+        </ul>
+      </p>
+      <p>
+        Here's the full function:
+        <pre>
+          <code>
+void
+TestDrawBmp(
+  struct win32_screen_buffer *ScreenBuffer, u32 *BmpPixels,
+  s32 ImgRow, s32 ImgCol,
+  s32 StartX, s32 StartY, s32 Width, s32 Height
+)
+{
+  BEGIN_BLOCK_PF(2);
+  if(StartX < 0)
+  {
+    StartX = 0;
+  }
+  if(StartY < 0)
+  {
+    StartY = 0;
+  }
+  if(StartX > ScreenBuffer->Width)
+  {
+    StartX = ScreenBuffer->Width;
+  }
+  if(StartY> ScreenBuffer->Height)
+  {
+    StartY = ScreenBuffer->Height;
+  }
+
+  // Get tile from tile atlas using offset
+  // 1 - first column, 1 - first row (both start from 0)
+  // Bmp for N-th tile
+  // f.e. N = 3
+  // Then our bmp for tile is from *BmpPixels[X + Y*TILE_ATLAS_WIDTH]
+  // *BmpPixels[1 + 1*1024]
+  u32 OffsetPixX = ImgCol * Width;
+  u32 OffsetPixY = ImgRow * Height;
+
+  u32 *CurrPixelInBmp = BmpPixels + (OffsetPixX + OffsetPixY * BMP_ATLAS_WIDTH);
+  s32 PixelCounter = 0;
+
+  // The image is stored in memory in the following way:
+  // f.e. it's a 4 by 4 pixel image
+  // Red   White
+  // White Green
+  // Memory window:
+  //      white         green         red           white
+  // | FF FF FF FF | 00 FF 00 FF | 00 00 FF FF | FF FF FF FF |
+  // It's also in BGRA order for each pixel
+
+  // BMP image is upside down, need to reverse
+  // Start from the last row
+  // Example: bmp image is width=4, height=3
+  // ScreenBuffer->Memory is casted to a byte (points to the upper left screen corner f.e.)
+  // Preadvance it by adding (Height-1)*(ScreenBuffer->Pitch)
+  // where Height-1 is the last row of an image and Pitch is ScreenWidth*BytesPerPixel (f.e. 600*4)
+  // representing one full row of a screen pixels
+  u8 *Row = (u8 *)ScreenBuffer->Memory +
+    StartX * ScreenBuffer->BytesPerPixel +
+    ((StartY + Height-1)*(ScreenBuffer->Pitch));
+  for(s32 Y = StartY; Y < StartY+Height; Y++)
+  {
+    u32 *Pixel = (u32 *)Row;
+    for(s32 X = StartX; X < StartX+Width; X++)
+    {
+      BEGIN_BLOCK(3);
+      // When Width is a multiple of pixel counter
+      // it means we reached the end of the current image row
+      // then advance to the next pixel row of the image
+      if((PixelCounter && ((PixelCounter % Width) == 0)) && (PixelCounter < Height*Width))
+      {
+        // Add the whole atlas width, but compensate the tile width
+        // as we were already at the end of the current image row
+        // f.e. when drawing White
+        //      white         green                        red           white
+        // | FF FF FF FF | 00 FF 00 FF | .. .. .. ..  | 00 00 FF FF | FF FF FF FF |
+        //               ^                                          ^
+        //         move from here                                to here
+        CurrPixelInBmp += (BMP_ATLAS_WIDTH - Width);
+      }
+
+      // Colors may not correspond (in case it's in BRG f.e.), but
+      // it doesn't matter here
+
+      // In order to use these values for calculations
+      // we need to shift it and then mask
+      f32 SourceAlpha = (f32)((*CurrPixelInBmp >> 24) & 0xFF) / 255.0f; // 0xFF is 255 (0000 0000 0000 0000 1111 1111)
+      f32 SourceRed = (f32)((*CurrPixelInBmp >> 16) & 0xFF);
+      f32 SourceGreen = (f32)((*CurrPixelInBmp >> 8) & 0xFF);
+      f32 SourceBlue = (f32)((*CurrPixelInBmp >> 0) & 0xFF);
+
+      f32 DestRed = (f32)((*Pixel >> 16) & 0xFF);
+      f32 DestGreen = (f32)((*Pixel >> 8) & 0xFF);
+      f32 DestBlue = (f32)((*Pixel >> 0) & 0xFF);
+
+      f32 ResultRed = (1.0f - SourceAlpha) * DestRed + SourceRed * SourceAlpha;
+      f32 ResultGreen = (1.0f - SourceAlpha) * DestGreen + SourceGreen * SourceAlpha;
+      f32 ResultBlue = (1.0f - SourceAlpha) * DestBlue + SourceBlue * SourceAlpha;
+
+      u32 Result = ((u32)(ResultRed + 0.5f) << 16) |
+        ((u32)(ResultGreen + 0.5f) << 8) |
+        ((u32)(ResultBlue + 0.5f) << 0);
+
+      *Pixel = Result;
+      Pixel++;
+      CurrPixelInBmp++;
+      PixelCounter++;
+      END_BLOCK(3);
+    }
+    Row -= ScreenBuffer->Pitch;
+  }
+  END_BLOCK_COUNTED_PF(2, PixelCounter/8);
+}
+          </code>
+        </pre>
+      </p>
+      <p>
+        The function uses two nested loops to process every pixel in the sprite region. For each pixel, it extracts red, green, and blue values from the source image and recombines them into the OS-specific format required for display. To understand the bottleneck, we analyzed the computational load per pixel.
+      </p>
+      <p>
+        The memory footprint is minimal - far below the system's memory bandwidth capacity - so this is not a memory-bound problem. Similarly, branch mispredictions are negligible since the only conditional statement (a single rarely-triggered if) has no meaningful impact on performance.
+      </p>
+      <p>
+        The real constraint is computational throughput. The inner loop executes <strong>ten bit shifts, seven bitwise AND operations, nine additions, six multiplications, two bitwise OR operations, three subtractions, and one division per pixel</strong>.
+      </p>
+      <p>
+        Given that our CPU has only two execution ports dedicated to bit shifts and four general ALU ports (some handling bitwise ops), this volume of work saturates the hardware. Specifically, with ten shifts required per pixel but only two shifts possible per cycle, the CPU stalls repeatedly while waiting for shift operations to complete. This imbalance between demand and execution capacity is the primary bottleneck.
+      </p>
+      <p>
+        To resolve this, we must leverage wider instructions. SIMD operations will allow us to process multiple pixels in parallel, distributing these computational demands across the CPU's vector units and eliminating the scalar shift bottleneck.
+      </p>
+      <h3>Benchmarks (non optimized renderer)</h3>
+      <p>
+        Testing conditions: O2 build, no simd. Game's first level.
+        <pre>
+          <code>
+DEBUG CYCLE COUNTS:
+ id: 1: 47220711 cycles, 1 hits, 47220711 cycles/hit, 0 bytes, 1786 page faults
+ id: 2: 13418467 cycles, 7 hits, 1916923 cycles/hit, 705536 bytes
+ id: 3: 7394869 cycles, 176384 hits, 41 cycles/hit, 0 bytes
+
+DEBUG CYCLE COUNTS:
+ id: 1: 13088680 cycles, 1 hits, 13088680 cycles/hit, 0 bytes
+ id: 2: 12872787 cycles, 7 hits, 1838969 cycles/hit, 705536 bytes
+ id: 3: 6548456 cycles, 176384 hits, 37 cycles/hit, 0 bytes
+
+DEBUG CYCLE COUNTS:
+ id: 1: 11561365 cycles, 1 hits, 11561365 cycles/hit, 0 bytes
+ id: 2: 11383799 cycles, 7 hits, 1626257 cycles/hit, 705536 bytes
+ id: 3: 5504898 cycles, 176384 hits, 31 cycles/hit, 0 bytes
+
+DEBUG CYCLE COUNTS:
+ id: 1: 11639454 cycles, 1 hits, 11639454 cycles/hit, 0 bytes
+ id: 2: 11414363 cycles, 7 hits, 1630623 cycles/hit, 705536 bytes
+ id: 3: 5558547 cycles, 176384 hits, 31 cycles/hit, 0 bytes
+
+DEBUG CYCLE COUNTS:
+ id: 1: 13459087 cycles, 1 hits, 13459087 cycles/hit, 0 bytes
+ id: 2: 13296761 cycles, 7 hits, 1899537 cycles/hit, 705536 bytes
+ id: 3: 7150104 cycles, 176384 hits, 40 cycles/hit, 0 bytes
+
+DEBUG CYCLE COUNTS:
+ id: 1: 12797135 cycles, 1 hits, 12797135 cycles/hit, 0 bytes
+ id: 2: 12595954 cycles, 7 hits, 1799422 cycles/hit, 705536 bytes
+ id: 3: 6333585 cycles, 176384 hits, 35 cycles/hit, 0 bytes
+
+DEBUG CYCLE COUNTS:
+ id: 1: 13344480 cycles, 1 hits, 13344480 cycles/hit, 0 bytes
+ id: 2: 13013865 cycles, 7 hits, 1859123 cycles/hit, 705536 bytes
+ id: 3: 6327100 cycles, 176384 hits, 35 cycles/hit, 0 bytes
+
+DEBUG CYCLE COUNTS:
+ id: 1: 12993316 cycles, 1 hits, 12993316 cycles/hit, 0 bytes
+ id: 2: 12863302 cycles, 7 hits, 1837614 cycles/hit, 705536 bytes
+ id: 3: 6078738 cycles, 176384 hits, 34 cycles/hit, 0 bytes
+
+DEBUG CYCLE COUNTS:
+ id: 1: 12092054 cycles, 1 hits, 12092054 cycles/hit, 0 bytes
+ id: 2: 11997849 cycles, 7 hits, 1713978 cycles/hit, 705536 bytes
+ id: 3: 5981934 cycles, 176384 hits, 33 cycles/hit, 0 bytes
+
+DEBUG CYCLE COUNTS:
+ id: 1: 11624825 cycles, 1 hits, 11624825 cycles/hit, 0 bytes
+ id: 2: 11404111 cycles, 7 hits, 1629158 cycles/hit, 705536 bytes
+ id: 3: 5585599 cycles, 176384 hits, 31 cycles/hit, 0 bytes
+
+DEBUG CYCLE COUNTS:
+ id: 1: 11772443 cycles, 1 hits, 11772443 cycles/hit, 0 bytes
+ id: 2: 11679739 cycles, 7 hits, 1668534 cycles/hit, 705536 bytes
+ id: 3: 5152782 cycles, 176384 hits, 29 cycles/hit, 0 bytes
+
+DEBUG CYCLE COUNTS:
+ id: 1: 27131186 cycles, 1 hits, 27131186 cycles/hit, 0 bytes
+ id: 2: 27055842 cycles, 7 hits, 3865120 cycles/hit, 705536 bytes
+ id: 3: 13659562 cycles, 176384 hits, 77 cycles/hit, 0 bytes
+
+DEBUG CYCLE COUNTS:
+ id: 1: 26953533 cycles, 1 hits, 26953533 cycles/hit, 0 bytes
+ id: 2: 26880117 cycles, 7 hits, 3840016 cycles/hit, 705536 bytes
+ id: 3: 13834057 cycles, 176384 hits, 78 cycles/hit, 0 bytes
+
+DEBUG CYCLE COUNTS:
+ id: 1: 27492856 cycles, 1 hits, 27492856 cycles/hit, 0 bytes
+ id: 2: 27420772 cycles, 7 hits, 3917253 cycles/hit, 705536 bytes
+ id: 3: 13846844 cycles, 176384 hits, 78 cycles/hit, 0 bytes
+
+DEBUG CYCLE COUNTS:
+ id: 1: 26456993 cycles, 1 hits, 26456993 cycles/hit, 0 bytes
+ id: 2: 26386673 cycles, 7 hits, 3769524 cycles/hit, 705536 bytes
+ id: 3: 12369933 cycles, 176384 hits, 70 cycles/hit, 0 bytes
+
+DEBUG CYCLE COUNTS:
+ id: 1: 26811072 cycles, 1 hits, 26811072 cycles/hit, 0 bytes
+ id: 2: 26741764 cycles, 7 hits, 3820252 cycles/hit, 705536 bytes
+ id: 3: 13457600 cycles, 176384 hits, 76 cycles/hit, 0 bytes
+
+DEBUG CYCLE COUNTS:
+ id: 1: 27330088 cycles, 1 hits, 27330088 cycles/hit, 0 bytes
+ id: 2: 27257280 cycles, 7 hits, 3893897 cycles/hit, 705536 bytes
+ id: 3: 13733176 cycles, 176384 hits, 77 cycles/hit, 0 bytes
+
+DEBUG CYCLE COUNTS:
+ id: 1: 26971212 cycles, 1 hits, 26971212 cycles/hit, 0 bytes
+ id: 2: 26893696 cycles, 7 hits, 3841956 cycles/hit, 705536 bytes
+ id: 3: 13556088 cycles, 176384 hits, 76 cycles/hit, 0 bytes
+
+DEBUG CYCLE COUNTS:
+ id: 1: 28849932 cycles, 1 hits, 28849932 cycles/hit, 0 bytes
+ id: 2: 28766816 cycles, 7 hits, 4109545 cycles/hit, 705536 bytes
+ id: 3: 15692804 cycles, 176384 hits, 88 cycles/hit, 0 bytes
+
+DEBUG CYCLE COUNTS:
+ id: 1: 27888728 cycles, 1 hits, 27888728 cycles/hit, 0 bytes
+ id: 2: 27808764 cycles, 7 hits, 3972680 cycles/hit, 705536 bytes
+ id: 3: 14433344 cycles, 176384 hits, 81 cycles/hit, 0 bytes
+
+DEBUG CYCLE COUNTS:
+ id: 1: 26402385 cycles, 1 hits, 26402385 cycles/hit, 0 bytes
+ id: 2: 26335785 cycles, 7 hits, 3762255 cycles/hit, 705536 bytes
+ id: 3: 12141081 cycles, 176384 hits, 68 cycles/hit, 0 bytes
+          </code>
+        </pre>
+      </p>
+      <h3>Benchmarks (SIMD optimized renderer)</h3>
+      <p>
+        Here's the new renderer function:
+        <pre>
+          <code>
+void
+DrawOneSprite(
+  struct win32_screen_buffer *ScreenBuffer, u32 *BmpPixels,
+  s32 StartX, s32 StartY, s32 Width, s32 Height
+)
+{
+  BEGIN_BLOCK_PF(2);
+  s32 PixelCounter = Width;
+  if(StartX < 0)
+  {
+    StartX = 0;
+  }
+  if(StartY < 0)
+  {
+    StartY = 0;
+  }
+  if(StartX > ScreenBuffer->Width)
+  {
+    StartX = ScreenBuffer->Width;
+  }
+  if(StartY > ScreenBuffer->Height)
+  {
+    StartY = ScreenBuffer->Height;
+  }
+
+  u32 *CurrPixelInBmp = BmpPixels;
+  __m128i MaskFF = _mm_set1_epi32(0xFF);
+
+  f32 Inv255 = 1.0f / 255.0f;
+  __m128 Inv255Wide = _mm_set1_ps(Inv255);
+  __m128 OneWide = _mm_set1_ps(1.0f);
+
+  u8 *Row = (u8 *)ScreenBuffer->Memory +
+    StartX * ScreenBuffer->BytesPerPixel +
+    ((StartY + Height-1)*(ScreenBuffer->Pitch));
+  for(s32 Y = StartY; Y < StartY+Height; Y++)
+  {
+    u32 *Pixel = (u32 *)Row;
+    for(s32 X = StartX; X < StartX+Width; X+=4)
+    {
+      BEGIN_BLOCK(3);
+
+      __m128i PixelWide = _mm_loadu_si128((__m128i *)Pixel);
+      __m128i CurrPixelInBmp4x = _mm_loadu_si128((__m128i *)CurrPixelInBmp);
+
+      __m128i SourceAlphaShifted4x = _mm_srli_epi32(CurrPixelInBmp4x, 24);
+      __m128i SourceAlphaShiftedMasked4x = _mm_and_si128(SourceAlphaShifted4x, MaskFF);
+      __m128 SourceAlphaShiftedMaskedFloat4x = _mm_cvtepi32_ps(SourceAlphaShiftedMasked4x);
+      __m128 SourceAlpha = _mm_mul_ps(SourceAlphaShiftedMaskedFloat4x, Inv255Wide);
+
+      __m128i SourceRedShifted4x = _mm_srli_epi32(CurrPixelInBmp4x, 16);
+      __m128i SourceRedShiftedMasked4x = _mm_and_si128(SourceRedShifted4x, MaskFF);
+      __m128 SourceRed = _mm_cvtepi32_ps(SourceRedShiftedMasked4x);
+
+      __m128i SourceGreenShifted4x = _mm_srli_epi32(CurrPixelInBmp4x, 8);
+      __m128i SourceGreenShiftedMasked4x = _mm_and_si128(SourceGreenShifted4x, MaskFF);
+      __m128 SourceGreen = _mm_cvtepi32_ps(SourceGreenShiftedMasked4x);
+
+      // No need to shift blue (it used to be ">> 0" originally)
+      __m128i SourceBlueShiftedMasked4x = _mm_and_si128(CurrPixelInBmp4x, MaskFF);
+      __m128 SourceBlue = _mm_cvtepi32_ps(SourceBlueShiftedMasked4x);
+
+      __m128i DestRedShifted4x = _mm_srli_epi32(PixelWide, 16);
+      __m128i DestRedShiftedMasked4x = _mm_and_si128(DestRedShifted4x, MaskFF);
+      __m128 DestRed = _mm_cvtepi32_ps(DestRedShiftedMasked4x);
+
+      __m128i DestGreenShifted4x = _mm_srli_epi32(PixelWide, 8);
+      __m128i DestGreenShiftedMasked4x = _mm_and_si128(DestGreenShifted4x, MaskFF);
+      __m128 DestGreen = _mm_cvtepi32_ps(DestGreenShiftedMasked4x);
+
+      // No need to shift blue
+      __m128i DestBlueShiftedMasked4x = _mm_and_si128(PixelWide, MaskFF);
+      __m128 DestBlue = _mm_cvtepi32_ps(DestBlueShiftedMasked4x);
+
+      // Results wide
+      // The formula is (1.0f - SourceAlpha) * DestRed + SourceRed * SourceAlpha;
+      __m128 ResultRed = _mm_add_ps(
+        _mm_mul_ps(_mm_sub_ps(OneWide, SourceAlpha), DestRed),
+        _mm_mul_ps(SourceRed, SourceAlpha)
+      );
+      __m128 ResultGreen = _mm_add_ps(
+        _mm_mul_ps(_mm_sub_ps(OneWide, SourceAlpha), DestGreen),
+        _mm_mul_ps(SourceGreen, SourceAlpha)
+      );
+      __m128 ResultBlue = _mm_add_ps(
+        _mm_mul_ps(_mm_sub_ps(OneWide, SourceAlpha), DestBlue),
+        _mm_mul_ps(SourceBlue, SourceAlpha)
+      );
+
+      __m128i ResultRedShifted = _mm_slli_epi32(_mm_cvtps_epi32(ResultRed), 16);
+      __m128i ResultGreenShifted = _mm_slli_epi32(_mm_cvtps_epi32(ResultGreen), 8);
+      // Blue doesn't need to be shifted
+      __m128i ResultBlueShifted = _mm_cvtps_epi32(ResultBlue);
+
+      // Final results
+      __m128i Result = _mm_or_si128(ResultRedShifted, _mm_or_si128(ResultGreenShifted, ResultBlueShifted));
+
+      _mm_storeu_si128((__m128i *)Pixel, Result);
+
+      Pixel+=4;
+      CurrPixelInBmp+=4;
+      END_BLOCK(3);
+    }
+    Row -= ScreenBuffer->Pitch;
+  }
+  END_BLOCK_COUNTED_PF(2, (Height*Width)*4);
+}
+          </code>
+        </pre>
+        The assets system has to be redone due to limits of the previous version which didn't allow for a smooth transition to SIMD.
+      </p>
+      <p>
+        Testing conditions: O2 build, SIMD. Game's first level.
+        And the results are:
+        <pre>
+          <code>
+DEBUG CYCLE COUNTS:
+ id: 1: 34236963 cycles, 1 hits, 34236963 cycles/hit, 0 bytes, 1561 page faults
+ id: 2: 3213846 cycles, 7 hits, 459120 cycles/hit, 705536 bytes
+ id: 3: 2037680 cycles, 44096 hits, 46 cycles/hit, 0 bytes
+
+DEBUG CYCLE COUNTS:
+ id: 1: 2280037 cycles, 1 hits, 2280037 cycles/hit, 0 bytes
+ id: 2: 2250541 cycles, 7 hits, 321505 cycles/hit, 705536 bytes
+ id: 3: 1006077 cycles, 44096 hits, 22 cycles/hit, 0 bytes
+
+DEBUG CYCLE COUNTS:
+ id: 1: 2395600 cycles, 1 hits, 2395600 cycles/hit, 0 bytes
+ id: 2: 2365079 cycles, 7 hits, 337868 cycles/hit, 705536 bytes
+ id: 3: 1064182 cycles, 44096 hits, 24 cycles/hit, 0 bytes
+
+DEBUG CYCLE COUNTS:
+ id: 1: 2390189 cycles, 1 hits, 2390189 cycles/hit, 0 bytes
+ id: 2: 2364882 cycles, 7 hits, 337840 cycles/hit, 705536 bytes
+ id: 3: 1077503 cycles, 44096 hits, 24 cycles/hit, 0 bytes
+
+DEBUG CYCLE COUNTS:
+ id: 1: 2662852 cycles, 1 hits, 2662852 cycles/hit, 0 bytes
+ id: 2: 2633900 cycles, 7 hits, 376271 cycles/hit, 705536 bytes
+ id: 3: 1093708 cycles, 44096 hits, 24 cycles/hit, 0 bytes
+
+DEBUG CYCLE COUNTS:
+ id: 1: 5010532 cycles, 1 hits, 5010532 cycles/hit, 0 bytes
+ id: 2: 4948196 cycles, 7 hits, 706885 cycles/hit, 705536 bytes
+ id: 3: 2379056 cycles, 44096 hits, 53 cycles/hit, 0 bytes
+
+DEBUG CYCLE COUNTS:
+ id: 1: 5572556 cycles, 1 hits, 5572556 cycles/hit, 0 bytes
+ id: 2: 5519848 cycles, 7 hits, 788549 cycles/hit, 705536 bytes
+ id: 3: 2661376 cycles, 44096 hits, 60 cycles/hit, 0 bytes
+
+DEBUG CYCLE COUNTS:
+ id: 1: 5610476 cycles, 1 hits, 5610476 cycles/hit, 0 bytes
+ id: 2: 5553992 cycles, 7 hits, 793427 cycles/hit, 705536 bytes
+ id: 3: 3035984 cycles, 44096 hits, 68 cycles/hit, 0 bytes
+
+DEBUG CYCLE COUNTS:
+ id: 1: 5033152 cycles, 1 hits, 5033152 cycles/hit, 0 bytes
+ id: 2: 4969344 cycles, 7 hits, 709906 cycles/hit, 705536 bytes
+ id: 3: 2387544 cycles, 44096 hits, 54 cycles/hit, 0 bytes
+
+DEBUG CYCLE COUNTS:
+ id: 1: 5940576 cycles, 1 hits, 5940576 cycles/hit, 0 bytes
+ id: 2: 5875920 cycles, 7 hits, 839417 cycles/hit, 705536 bytes
+ id: 3: 3229220 cycles, 44096 hits, 73 cycles/hit, 0 bytes
+
+DEBUG CYCLE COUNTS:
+ id: 1: 4979204 cycles, 1 hits, 4979204 cycles/hit, 0 bytes
+ id: 2: 4924804 cycles, 7 hits, 703543 cycles/hit, 705536 bytes
+ id: 3: 2343572 cycles, 44096 hits, 53 cycles/hit, 0 bytes
+
+DEBUG CYCLE COUNTS:
+ id: 1: 5263172 cycles, 1 hits, 5263172 cycles/hit, 0 bytes
+ id: 2: 5203800 cycles, 7 hits, 743400 cycles/hit, 705536 bytes
+ id: 3: 2659092 cycles, 44096 hits, 60 cycles/hit, 0 bytes
+
+DEBUG CYCLE COUNTS:
+ id: 1: 5384889 cycles, 1 hits, 5384889 cycles/hit, 0 bytes
+ id: 2: 5315293 cycles, 7 hits, 759327 cycles/hit, 705536 bytes
+ id: 3: 2626572 cycles, 44096 hits, 59 cycles/hit, 0 bytes
+
+DEBUG CYCLE COUNTS:
+ id: 1: 5463628 cycles, 1 hits, 5463628 cycles/hit, 0 bytes
+ id: 2: 5391232 cycles, 7 hits, 770176 cycles/hit, 705536 bytes
+ id: 3: 2444068 cycles, 44096 hits, 55 cycles/hit, 0 bytes
+
+DEBUG CYCLE COUNTS:
+ id: 1: 5307632 cycles, 1 hits, 5307632 cycles/hit, 0 bytes
+ id: 2: 5245464 cycles, 7 hits, 749352 cycles/hit, 705536 bytes
+ id: 3: 2620268 cycles, 44096 hits, 59 cycles/hit, 0 bytes
+
+DEBUG CYCLE COUNTS:
+ id: 1: 5047113 cycles, 1 hits, 5047113 cycles/hit, 0 bytes
+ id: 2: 4959380 cycles, 7 hits, 708482 cycles/hit, 705536 bytes
+ id: 3: 2360344 cycles, 44096 hits, 53 cycles/hit, 0 bytes
+
+DEBUG CYCLE COUNTS:
+ id: 1: 5652293 cycles, 1 hits, 5652293 cycles/hit, 0 bytes
+ id: 2: 5583281 cycles, 7 hits, 797611 cycles/hit, 705536 bytes
+ id: 3: 2780720 cycles, 44096 hits, 63 cycles/hit, 0 bytes
+
+DEBUG CYCLE COUNTS:
+ id: 1: 5383532 cycles, 1 hits, 5383532 cycles/hit, 0 bytes
+ id: 2: 5305776 cycles, 7 hits, 757968 cycles/hit, 705536 bytes
+ id: 3: 2640220 cycles, 44096 hits, 59 cycles/hit, 0 bytes
+
+DEBUG CYCLE COUNTS:
+ id: 1: 5034580 cycles, 1 hits, 5034580 cycles/hit, 0 bytes
+ id: 2: 4976984 cycles, 7 hits, 710997 cycles/hit, 705536 bytes
+ id: 3: 2387748 cycles, 44096 hits, 54 cycles/hit, 0 bytes
+
+DEBUG CYCLE COUNTS:
+ id: 1: 5549480 cycles, 1 hits, 5549480 cycles/hit, 0 bytes
+ id: 2: 5480300 cycles, 7 hits, 782900 cycles/hit, 705536 bytes
+ id: 3: 2702116 cycles, 44096 hits, 61 cycles/hit, 0 bytes
+          </code>
+        </pre>
+      </p>
+      <p>
+        Since the inner loop now increments by 4 instead of 1 we need to fix the cycle/hit counter for the third measure.
+      </p>
+      <p>
+        F.e. 2702116 / (44096 * 4) = 15 cycles/hit. The total cycles vary between 2 200 000 to 5 600 000. For comparisson, the old version total cycles count for one frame is between 11 000 000 and 28 000 000 for the particular game sceen that was measured.
+      </p>
+      <p>
+        Taking average case for these cycle values, let's say <strong>non SIMD</strong> version is usually around <strong>20 000 000 cycles total</strong>. And <strong>SIMD is around 5 000 000</strong>, we get <strong>4x speed improvement exactly</strong>.
+      </p>
+      <h3>Things that can be improved</h3>
+      <p>
+        <ul>
+          <li> 
+            We used SSE 128 bit registers. The 2015 Intel i5 processor that was used to run these is capable of executing AVX instructions of 256 bit length. However, there is a problem with game code which leads to point 2.
+          </li>
+          <li>
+            Because it was a really simple case of applying SIMD, the function that draws spirtes now has a limit. All the sprites should have width as a multiple of 4. If wider registers are used, then it should be multiple of 8. This is starting to get problemactic. To fix the issue we need to apply bitmasks that srtips away pixels that should be read (and probably even loaded).
+          </li>
+      </p>
+
+      <p>
+        <ul>
+          <li><a href="../n3/pa_bench_1.html">Overview</a></li>
+          <li><a href="../n3/pa_bench_2.html">Profiling the game code;</a></li>
+          <li><a href="../n3/pa_bench_3.html">File I/O and page faults;</a></li>
+          <li><a href="../n3/pa_bench_4.html">Measuring memory bandwidth;</a></li>
+          <li><a href="../n3/pa_bench_5.html">Instruction decoding;</a></li>
+          <li><a href="../n3/pa_bench_6.html">Testing branch prediction;</a></li>
+          <li><a href="../n3/pa_bench_7.html">Execution ports and schedulers;</a></li>
+          <li><a href="../n3/pa_bench_8.html">Cache sizes and bandwidth;</a></li>
+          <li>Introducing SIMD;</li>
+          <br>
+            <i>In progress</i>
+          <br>
+          <li>Multithreading.</li>
+        </ul>
+      </p>
+  </body>
+</html>

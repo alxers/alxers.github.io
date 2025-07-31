@@ -1,0 +1,116 @@
+<html>
+  <link rel="stylesheet" href="../../main.css">
+  <body>
+    <div id="header">
+      <a href="../../index.html" class="header_link">Notes</a>
+      <a href="../../projects.html" class="header_link">Projects</a>
+    </div>
+    <div id="content">
+      <div class="top_section">
+        <p class="subj">
+          <span class="bold_text">Subject: </span>
+            Game design is discovery, not invention. How systems in games reveal universal truths where deep, surprising patterns arise naturally from simple rules, much like in math or nature.
+        </p>
+        <p class="subj">
+          <span class="bold_text">Sources:</span>
+          <ul>
+            <li><a href="http://marctenbosch.com/news/2011/11/designing-to-reveal-the-nature-of-the-universe/">Designing to Reveal the Nature of the Universe</a></li>
+            <li><a href="https://www.youtube.com/watch?v=OGSeLSmOALU">IndieCade 2011: Jonathan Blow & Marc Ten Bosch</a></li>
+            <li><a href="https://www.youtube.com/watch?v=C5FUtrmO7gI">Jonathan Blow - Truth In Game Design</a></li>
+          </ul>
+        </p>
+      </div>
+
+      <p>
+        These notes summarize insights from various game designers on creating deep and meaningful game systems. This is not intended to be a comprehensive perspective. Furthermore, there's no single "best" approach to designing such systems - these are simply ideas worth exploring, along with reflections on their implementation.
+      </p>
+      <p>
+        As Jonathan Blow and Marc Ten Bosch point out - well-designed game systems aren't merely constructs that game designers build. These systems "give you something back that you did not put into them." When properly designed, they generate emergent complexity that wasn't explicitly authored.
+      </p>
+      <p>
+        <blockquote>
+          When we look at the universe using mathematics, we see a system. Similarly, we can examine the universe through games - these "toy universes" function as complex mathematical systems. Mathematicians talk about beauty. They seem to agree that the shortes theorems that carry the deepest consequences are the most beautiful. Applying these same principles of beauty to games forms the core of the aesthetics we're exploring.
+
+          We build systems and explore their consequences, in a math-like way (not arithmetic!).
+          We present the results so that players can discover the same truth in turn.
+        </blockquote>
+      </p>
+      <h3>Mathematical Systems as Game Mechanics</h3>
+      <p>
+        Consider a mathematical system implemented as game mechanics that's consistent enough to potentially yield unknown results. For instance, a game based on natural deduction systems could require players to prove things using predefined rules of combining mathematical statements. A "free mode" might allow exploration of possible outcomes, potentially revealing patterns in constructions that were never previously examined.
+      </p>
+      <p>
+        Alternatively, a game about abstract algebra could feature symmetry group puzzles or group generation mechanics, potentially leading to the discovery of new interesting groups or symmetry properties. Some games might deliberately set up situations which requires solving a previously unsolved mathematical problem. Think of an extra challenging hidden puzzle or a secret boss fight - the situations that go beyond a regular "solvable" problems.
+      </p>
+      <p>
+        More commonly, players might rediscover existing mathematical concepts, which remains valuable as an exercise in understanding mathematics from first principles and axioms. This gives an understanding of fundamental concepts and prepares players to discover more complex rules and patterns later.
+      </p>
+      <h3>How to Explore</h3>
+      <p>
+        <blockquote>
+          Start with some idea - it could be a mechanic or a detail/consequence of an unknown mechanic.
+          When exploring, aim toward the richest space, explore it completely, and trace a strong boundary around it. Present the rules clearly. Do this with lightest contrivance to get closer to the truth.
+        </blockquote>
+      </p>
+      <p>
+        Example from Marc Ten Bosch's Miegakure <a href="https://miegakure.com/">(miegakure.com)</a>. The game explores 4D space through puzzles using a simple mechanic: pressing a button to switch between 3D and 4D spaces. If a wall blocks the player's path in 3D space, moving into 4D space "removes" the wall, allowing passage before switching back. This basic scenario was convincing enough that the concept would work. Prototyping was essential to observe the mechanics' actual consequences, after which it was possible to developed more sophisticated applications.
+      </p>
+      <p>
+        Jonathan Blow's The Witness began with free exploration but needed clear puzzle locations. The panel concept emerged - players draw on panels to solve puzzles. However, free drawing created inconsistencies across input devices (mouse, trackpad, controller), necessitating a grid system. Further decisions followed: Where should drawing end? Can lines cross? Each restriction generated different consequences. These discoveries came from asking "what if" questions rather than starting with predetermined puzzle types.
+      </p>
+      <p>
+        In Braid, each world served as a "laboratory" testing different time mechanics: What if some objects are immune to rewinding? What if time moves based on the player's horizontal position? What if time-slowing effects are localized? When exploration yields possibilities, designers must ask: "Which possibility do we like and why?"
+      </p>
+      <p>
+        Several properties function as virtues in this design philosophy, all serving the overarching goal of "showing a lot of truth with minimum contrivance":
+      </p>
+      <p>
+        <strong>Richness</strong> involves adjusting mechanics to find the richest, most interesting consequences. For instance, obstacles in Miegakure create meaningful interactions that reveal the nature of 4D space. A rich mechanic produces unexpected outcomes from simple rules, inviting players to explore multiple dimensions of the system.
+      </p>
+      <p>
+        <strong>Completeness</strong> means thoroughly exploring major consequences of a mechanic. In Braid, the "immune to rewind" mechanic was applied consistently across all object types - characters, doors, monsters. Complete systems allow players to form accurate mental models through observation and experimentation.
+      </p>
+      <p>
+        <strong>Surprise</strong> counterbalances completeness. After creating a complete system, designers should act as editors, removing elements that lack surprise (except for tutorial purposes). A system that consistently produces unexpected yet logical outcomes keeps players engaged in the discovery process.
+      </p>
+      <p>
+        <strong>Lightest Contrivance</strong> applies to both mechanics and level design. The more natural a mechanic's behavior, the less contrived it feels. As Blow observed, "when things are simple... that simplicity provides more room for truth in the design because it leaves less room for author contrivance." Removing unnecessary complications "makes room" for universal truths to emerge.
+      </p>
+      <p>
+        <strong>Strength of Boundary</strong> defines clear limits around the consequence space. Designers should remove mechanics that:
+        <ul>
+          <li>provide insufficient surprise;</li>
+          <li>lack richness compared to alternatives;</li>
+          <li>don't align with the game's purpose;</li>
+          <li>create overly broad consequence spaces;</li>
+          <li>overlap excessively with other mechanics.</li>
+         </ul>
+         Strong boundaries help players understand exactly what they're exploring and why.
+      </p>
+      <p>
+        <strong>Compatibility</strong> ensures that mechanics strengthen each other's boundaries. Richness and completeness require interacting mechanics; if interaction isn't possible, the mechanics are incompatible. Compatible systems create situations where the "whole becomes greater than the sum of its parts", revealing deeper truths through their interactions.
+      </p>
+      <p>
+        <strong>Orthogonality</strong> clearly defines a separation between different game mechanics. When mechanics are truly orthogonal, they each occupy their own distinct space in how the game works, with no overlap between them.
+      </p>
+      <p>
+        <strong>Generosity</strong> is about having mechanics that aren't artificially limited. Orthogonality and completeness imply generosity. For example, if a game has both checkpoints and time rewind, one should probably be removed (since they serve similar purposes). If checkpoints are eliminated, time rewind might become unlimited, creating a more generous system that trusts players to explore without artificial constraints.
+      </p>
+      <p>
+        This approach transforms design from creation into observation. As Blow discovered with Braid, "more ideas came out of the development process and ended up in the final game than I put into it as a designer... the process of designing the gameplay was more like discovering things that already exist than it was like creating something new."
+      </p>
+      <p>
+        When designing puzzles, the focus shouldn't be on difficulty or traditional notions of "good puzzles." Instead, designers should look for truth and illustrate it with a puzzle. The puzzle's purpose is to reveal some specific truth, and anything unrelated to that truth should be eliminated. Puzzles shouldn't generate random "aha" moments - their value comes from helping players understand something new about the system.
+      </p>
+      <p>
+        Consider creating a hierarchy of ideas where puzzles form part of a sequence or superstructure. Blow describes sequences in The Witness that function as conversations, where basic concepts build toward more complex ones. This approach aligns naturally with mathematics, where fundamental axioms gradually lead to sophisticated theorems.
+      </p>
+      <p>
+        Even if a game isn't traditionally "playable" by conventional standards, it retains value if it contains meaningful truth. <strong>Pushing such concepts create experiences that go beyond mere entertainment.</strong>
+      </p>
+      <p>
+        Great design is about discovering, not inventing. It means uncovering the core truths embedded within game mechanics themselves and presenting them without unnecessary additions. This approach creates intellectually satisfying experiences that resonate with players long after they've finished playing.
+      </p>
+    </div>
+  </body>
+</html>
